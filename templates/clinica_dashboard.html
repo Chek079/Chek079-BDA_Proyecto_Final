@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
   <link rel="stylesheet" href="{{url_for('static',filename='css/clinica_base.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='css/clinica_dashboard.css')}}">
+  <meta http-equiv="refresh" content="30">
 </head>
 
 <body>
@@ -28,7 +29,7 @@
       </li>
       <li><a href="{{url_for('clinica_sesionesDomicilio')}}"><i class="fa-solid fa-house-chimney-user"></i> Terapias
           Domicilio</a></li>
-      <li style="margin-top: auto;"><a href="{{url_for('principal')}}"><i
+      <li style="margin-top: auto;"><a href="{{url_for('logout')}}"><i
             class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
     </ul>
   </nav>
@@ -78,89 +79,95 @@
           </tr>
         </thead>
         <tbody>
-          {% for cita in citas_hoy %}
-          <tr>
-            <td style="font-weight: 600; color: var(--primary-blue);">{{ cita.hora }}</td>
-            <td>
-              <strong>{{ cita.paciente_nombre }}</strong>
-              <div style="font-size: 12px; color: var(--text-light);">ID: {{ cita.id_paciente }}</div>
-            </td>
-            <td>{{ cita.tratamiento }}</td>
+		{% for cita in citas_hoy %}
+  <tr>
+    <td style="font-weight: 600; color: var(--primary-blue);">{{ cita.hora_inicio }}</td>
+    <td>
+      <strong>{{ cita.paciente_nombre }}</strong>
+      <div style="font-size: 12px; color: var(--text-light);">ID: {{ cita.id_paciente }}</div>
+    </td>
+    <td>{{ cita.tratamiento or 'Terapia general' }}</td>
 
-            <td>
-              {% if cita.estado_ubicacion == 'Consultorio' %}
-              <div class="semaforo text-green">
-                <span class="dot green"></span> Listo en Consultorio
-              </div>
-              {% elif cita.estado_ubicacion == 'Sala_Espera' %}
-              <div class="semaforo text-yellow">
-                <span class="dot yellow"></span> En Sala de Espera
-              </div>
-              {% else %}
-              <div class="semaforo text-grey">
-                <span class="dot grey"></span> No ha llegado
-              </div>
-              {% endif %}
-            </td>
+    <td>
+      {% if cita.estado_sesion == 'EN_CURSO' %}
+        <div class="semaforo text-green">
+          <span class="dot green"></span> En sesión
+        </div>
+      {% elif cita.estado_sesion == 'FINALIZADA' %}
+        <div class="semaforo text-grey">
+          <span class="dot grey"></span> Sesión finalizada
+        </div>
+      {% elif cita.estado_ubicacion == 'Sala_Espera' %}
+        <div class="semaforo text-yellow">
+          <span class="dot yellow"></span> En sala de espera
+        </div>
+      {% elif cita.estado_ubicacion == 'Consultorio' %}
+        <div class="semaforo text-green">
+          <span class="dot green"></span> Listo en consultorio
+        </div>
+      {% else %}
+        <div class="semaforo text-grey">
+          <span class="dot grey"></span> No ha llegado
+        </div>
+      {% endif %}
+    </td>
 
-            <td>
-              {% if cita.estado_ubicacion == 'No_Llegado' %}
-              <button class="btn-action btn-disabled" disabled>Esperando...</button>
-              {% else %}
-              <!-- /sesion/iniciar/{{ cita.id_paciente }}-->
-              <a href="{{url_for('clinica_expedienteSesion')}}" class="btn-action btn-start">Iniciar Sesión</a>
-              {% endif %}
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td style="font-weight: 600; color: var(--primary-blue);">09:00 AM</td>
-            <td><strong>Ana López García</strong>
-              <div style="font-size: 12px; color: var(--text-light);">ID: PAC-1042</div>
-            </td>
-            <td>Rehabilitación de Hombro</td>
-            <td>
-              <div class="semaforo text-green"><span class="dot green"></span> Listo en Consultorio</div>
-            </td>
-            <td>
-              <a href="{{url_for('clinica_expedienteSesion')}}"><button class="btn-action btn-start">Iniciar
-                  Sesión</button></a>
-            </td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600; color: var(--primary-blue);">10:00 AM</td>
-            <td><strong>Carlos Ruiz</strong>
-              <div style="font-size: 12px; color: var(--text-light);">ID: PAC-1088</div>
-            </td>
-            <td>Terapia Física Post-Operatoria</td>
-            <td>
-              <div class="semaforo text-yellow"><span class="dot yellow"></span> En Sala de Espera</div>
-            </td>
-            <td><button class="btn-action btn-start">Ver Expediente</button></td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600; color: var(--primary-blue);">11:30 AM</td>
-            <td><strong>María Fernanda Gómez</strong>
-              <div style="font-size: 12px; color: var(--text-light);">ID: PAC-1102</div>
-            </td>
-            <td>Electroterapia</td>
-            <td>
-              <div class="semaforo text-grey"><span class="dot grey"></span> No ha llegado</div>
-            </td>
-            <td><button class="btn-action btn-disabled" disabled>Esperando...</button></td>
-          </tr>
-          {% endfor %}
+    <td>
+      {% if cita.estado_sesion == 'EN_CURSO' %}
+        <form action="{{ url_for('clinica_finalizarSesionReal', id_sesion=cita.id_sesion) }}"
+              method="POST" style="margin:0;">
+          <button type="submit" class="btn-action"
+                  style="background: #ef4444; color: white;">
+            Finalizar sesión
+          </button>
+        </form>
+
+      {% elif cita.estado_sesion == 'FINALIZADA' %}
+        <a href="{{ url_for('clinica_expedientePaciente') }}?id_paciente={{ cita.id_paciente }}"
+           class="btn-action btn-start">Ver expediente</a>
+
+      {% elif cita.estado_ubicacion in ['Sala_Espera', 'Consultorio'] %}
+        <form action="{{ url_for('clinica_iniciarSesionReal', id_sesion=cita.id_sesion) }}"
+              method="POST" style="margin:0;">
+          <button type="submit" class="btn-action btn-start">
+            Iniciar sesión
+          </button>
+        </form>
+
+      {% else %}
+        <button class="btn-action btn-disabled" disabled>Esperando...</button>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr>
+    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-light);">
+      No tienes citas programadas para hoy.
+    </td>
+  </tr>
+  {% endfor %}
+		
+
         </tbody>
       </table>
     </div>
   </main>
-
   <script>
-    // Script simple para poner la fecha actual en español
-    const dateElement = document.getElementById('currentDate');
-    const options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
-    dateElement.innerText = new Date().toLocaleDateString('es-ES', options).replace(/^\w/, (c) => c.toUpperCase());
-  </script>
+    // Reloj en vivo que se actualiza cada segundo
+    function actualizarHora() {
+        const now = new Date();
+        const options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
+        const fecha = now.toLocaleDateString('es-ES', options).replace(/^\w/, c => c.toUpperCase());
+        const hora  = now.toLocaleTimeString('es-MX', {hour12: true});
+        document.getElementById('currentDate').innerText = fecha + ' — ' + hora;
+    }
+    actualizarHora();
+    setInterval(actualizarHora, 1000);
+
+    // Indicador visual de auto-refresh
+    console.log('Auto-refresh cada 30 segundos activo');
+</script>
+
 </body>
 
 </html>

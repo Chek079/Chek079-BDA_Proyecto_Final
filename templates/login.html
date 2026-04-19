@@ -18,7 +18,7 @@
         </div>
         {% endif %}
 
-        <form action="/login" method="POST">
+        <form action="{{ url_for('login') }}" method="POST">
             <div class="form-group">
                 <label for="userId" class="form-label"><i class="fa-solid fa-user"></i> ID de Usuario</label>
                 <input type="text" id="userId" name="id" class="form-control" placeholder="Ej. 001" required autofocus>
@@ -26,7 +26,7 @@
             
             <div class="form-group">
                 <label for="userPassword" class="form-label"> <i class="fa-solid fa-lock"></i> Contraseña</label>
-                <input type="password" id="userPassword" name="password" class="form-control" placeholder="••••••••" value="1234" required>
+                <input type="password" id="userPassword" name="password" class="form-control" placeholder="••••••••" required>
             </div>
             
             <button type="submit" class="btn-submit">Ingresar</button>
