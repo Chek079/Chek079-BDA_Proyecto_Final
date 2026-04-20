@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Paciente - {{ paciente.nombre }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename=css_file) }}">
+    <link rel="stylesheet" href="{{url_for('static',filename='css/publica_paciente.css')}}">
+  </head>
+  <body>
+
+
+    <div class="main-content">
+
+    <a href="{{url_for('back_paciente')}}" class="back-btn">
+      <i class="fas fa-arrow-left"></i> Volver
+    </a>
+
+      <div class="profile-card">
+        <div class="avatar">
+          {{ paciente.nombre | default('R')}}
+        </div>
+        <div class="profile-info" style="width: 100%;">
+          <h1>{{ paciente.nombre }} {{ paciente.apellido_paterno }} {{ paciente.apellido_materno }}</h1>
+
+          <div class="contact-grid">
+            <div class="contact-item">
+              <strong>Nombre Completo</strong>
+              <span> {{ paciente.nombre | default('Raul Morales Salcedo')}} </span>
+            </div>
+            <div class="contact-item">
+              <strong>Teléfono</strong>
+              <span>{{ paciente.telefono or 'No registrado' }}</span>
+            </div>
+            <div class="contact-item">
+              <strong>Terapeuta</strong>
+              <span>{{ paciente.terapeuta | default('Irving') }}</span>
+            </div>
+            <div class="contact-item">
+              <strong>Correo Electrónico</strong>
+              <span>{{ paciente.correo or 'No registrado' }}</span>
+            </div>
+            <div class="contact-item">
+              <strong>Alergias</strong>
+              <span> {{ paciente.alergias | default('Paracetamol')}} </span>
+            </div>
+            <div class="contact-item" style="grid-column: 1 / -1;">
+              <strong>Dirección</strong>
+              <span>{{ paciente.direccion or 'No registrada' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="details-grid">
+
+        <div class="card">
+          <h3>Ultima sesi&oacute;n</h3>
+          <div class="text-block">
+            {% if paciente.antecedentes_medicos %}
+            {{ paciente.antecedentes_medicos }}
+            {% else %}
+            <span style="color: var(--text-light); font-style: italic;">
+              2026:04:21
+            </span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card">
+          <h3>Siguiente sesi&oacute;n</h3>
+          <div class="text-block">
+            {% if paciente.antecedentes_medicos %}
+            {{ paciente.antecedentes_medicos }}
+            {% else %}
+            <span style="color: var(--text-light); font-style: italic;">
+              El paciente no tiene sesion programada 
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Antecedentes Médicos</h3>
+          <div class="text-block">
+            {% if paciente.antecedentes_medicos %}
+            {{ paciente.antecedentes_medicos }}
+            {% else %}
+            <span style="color: var(--text-light); font-style: italic;">
+              El paciente no tiene antecedentes médicos registrados en el sistema.
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Medicamentos Actuales</h3>
+          <div class="medication-list">
+            {% if medicamentos %}
+            {% for med in medicamentos %}
+            <div class="medication-tag">
+              <span style="font-size: 1.2em;"></span>
+              {{ med.medicamento_actual }}
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color: var(--text-light); font-style: italic;">
+            No hay medicamentos registrados para este paciente.
+            </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </body>
+</html>

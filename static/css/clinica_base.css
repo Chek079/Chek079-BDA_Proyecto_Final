@@ -1,8 +1,8 @@
 /* Variables y base (manteniendo tu identidad visual) */
 :root {
-  --primary-blue: #2B6CB0;
-  --hover-blue: #1A4971;
-  --accent-teal: #38B2AC;
+  --primary: #2B6CB0;
+  --hover: #1A4971;
+  --accent: #38B2AC;
   --bg-gray: #F7FAFC;
   --text-dark: #2D3748;
   --text-light: #718096;
@@ -42,7 +42,7 @@ body {
 }
 
 .sidebar-header h1 {
-  color: var(--primary-blue);
+  color: var(--primary);
   font-size: 22px;
   margin: 0;
 }
@@ -70,7 +70,7 @@ body {
 
 .nav-links li a:hover,
 .nav-links li a.active {
-  background-color: var(--primary-blue);
+  background-color: var(--primary);
   color: var(--white);
 }
 
@@ -105,7 +105,7 @@ body {
   border-radius: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   font-weight: 600;
-  color: var(--primary-blue);
+  color: var(--primary);
   border: 1px solid var(--border-color);
 }
 
@@ -215,12 +215,12 @@ tr:hover {
 }
 
 .btn-start {
-  background-color: var(--primary-blue);
+  background-color: var(--primary);
   color: var(--white);
 }
 
 .btn-start:hover {
-  background-color: var(--hover-blue);
+  background-color: var(--hover);
 }
 
 .btn-disabled {

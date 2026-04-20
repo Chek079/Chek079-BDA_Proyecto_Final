@@ -69,7 +69,7 @@ body {
 .btn-submit {
   width: 100%;
   padding: 12px;
-  background-color: var(--hover-blue);
+  background-color: var(--hover);
   /* Azul médico */
   color: var(--white);
   border: none;

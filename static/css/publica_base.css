@@ -2,13 +2,14 @@
   --primary: #6B46C1;
   --hover: #4C51BF;
   --accent: #B794F4;
+  --bg-color: #FAF5FF;
   --bg-gray: #F7FAFC;
   --text-dark: #2D3748;
   --text-light: #A0AEC0;
   --white: #FFFFFF;
   --border-color: #E2E8F0;
-  --success-green: #48BB78;
-  --warning-yellow: #D69E2E;
+  --status-green: #48BB78;
+  --status-yellow: #D69E2E;
 }
 
 body {

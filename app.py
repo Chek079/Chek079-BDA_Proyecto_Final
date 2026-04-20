@@ -6,6 +6,18 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = '1234'
  
+
+# === METODOS DE LOGIN / LOGOUT ========================
+def get_css():
+    rol = session.get('rol')
+
+    if rol == 'admin':
+        return 'css/admin_base.css'
+    elif rol == 'doctor':
+        return 'css/clinica_base.css'
+    elif rol == 'paciente':
+        return 'css/publica_base.css'
+    return 'css/admin_base.css'
 # ─── CONFIGURACIÓN DE BD ───────────────────────────────────────────────────────
 DB_CONFIG = {
     'host':     '127.0.0.1',
@@ -683,6 +695,22 @@ def publica_sesiones():
                            paciente=paciente,
                            historial_paciente=historial_paciente or [])
 
+
+@app.route('/paciente/info')
+@login_required
+def expedientePaciente():
+    paciente = None
+    return render_template('publica_paciente.html', css_file=get_css(), paciente=paciente,  )
+
+@app.route('/back/paciente')
+@login_required
+def back_paciente():
+    if session['rol'] == 'admin':
+        return redirect(url_for('admin_obtenerPacientes')) # Redirige a la pantalla de pacientes de admin
+    elif session['rol'] == "doctor":
+        return redirect(url_for('clinica_obtenerPacientes')) # Redirige a la pantalla de pacientes de clinica
+    else:
+        return redirect(url_for('publica_dashboard')) # Redirige a la pantalla principal de admin
 
 if __name__ == "__main__":
     app.run(debug=True)

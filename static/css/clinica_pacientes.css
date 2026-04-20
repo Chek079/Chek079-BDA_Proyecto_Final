@@ -28,7 +28,7 @@
 }
 
 .search-box:focus {
-  border-color: var(--primary-blue);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
 }
 
@@ -46,7 +46,7 @@ table {
 }
 
 th {
-  background-color: var(--primary-blue);
+  background-color: var(--primary);
   color: var(--white);
   padding: 15px;
   text-align: left;
@@ -90,7 +90,7 @@ tr:hover {
 
 .badge-activo {
   background-color: #E6FFFA;
-  color: var(--accent-teal);
+  color: var(--accent);
   border: 1px solid #B2F5EA;
 }
 
@@ -123,11 +123,11 @@ tr:hover {
 
 .btn-view {
   background-color: var(--bg-gray);
-  color: var(--primary-blue);
+  color: var(--primary);
   border: 1px solid var(--border-color);
 }
 
 .btn-view:hover {
-  background-color: var(--primary-blue);
+  background-color: var(--primary);
   color: var(--white);
 }

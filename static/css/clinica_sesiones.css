@@ -110,7 +110,7 @@ table {
 }
 
 th {
-  background-color: var(--primary-blue);
+  background-color: var(--primary);
   color: var(--white);
   padding: 15px;
   text-align: left;

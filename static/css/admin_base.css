@@ -1,24 +1,17 @@
 /* 1. Reset Básico y Paleta de Colores */
 :root {
-  --primary-blue: #2A4365;
-  /* Azul Pizarra profundo (Transmite mucha autoridad y elegancia) */
-  --hover-blue: #1A365D;
-  /* Azul Noche para los hover */
-  --accent-teal: #4FD1C5;
-  /* Turquesa/Menta vibrante (Da un toque muy tecnológico) */
+  --primary: #2A4365;
+  --hover: #1A365D;
+  --accent: #4FD1C5;
+  --bg-color: #FAF5FF;
   --bg-gray: #F7FAFC;
-  /* Gris neutro muy limpio */
   --text-dark: #1A202C;
-  /* Gris asfalto casi negro */
   --text-light: #718096;
-  /* Gris neutro para subtítulos */
   --white: #FFFFFF;
-  --success: #38A169;
-  /* Verde clínico */
-  --warning: #D69E2E;
-  /* Naranja/Amarillo estándar */
+  --status-green: #38A169;
+  --status-yellow: #D69E2E;
+  --danger-red: #E53E3E;
   --border-color: #E2E8F0;
-  /* Bordes sutiles */
 }
 
 * {
@@ -41,10 +34,9 @@ body {
 .sidebar {
   width: 250px;
   background: linear-gradient(180deg,
-      var(--primary-blue) 0%,
-      color-mix(in srgb, var(--hover-blue) 80%, black) 100%);
+      var(--primary) 0%,
+      color-mix(in srgb, var(--hover) 80%, black) 100%);
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-  /* Una sombra lateral ayuda a separarlo del fondo */
   color: var(--white);
   display: flex;
   flex-direction: column;
@@ -75,8 +67,8 @@ body {
 
 .nav-links li a:hover,
 .nav-links li a.active {
-  background-color: var(--hover-blue);
-  border-left: 4px solid var(--accent-teal);
+  background-color: var(--hover);
+  border-left: 4px solid var(--accent);
 }
 
 /* 3. Guia para contenido*/
@@ -99,11 +91,11 @@ body {
 }
 
 .btn-add {
-  background-color: var(--primary-blue);
+  background-color: var(--primary);
 }
 
 .btn-edit {
-  background-color: var(--accent-teal);
+  background-color: var(--accent);
 }
 
 .btn-delete {

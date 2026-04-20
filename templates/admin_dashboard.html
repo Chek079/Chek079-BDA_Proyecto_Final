@@ -41,12 +41,12 @@
     <div class="kpi-grid">
       <div class="kpi-card">
         <h3>Pacientes en Clínica (Hoy)</h3>
-        <div class="number">{{ total_pacientes_hoy | default(12) }}</div>
+        <div class="number">{{ total_pacientes_hoy | default(0) }}</div>
       </div>
 
       <div class="kpi-card success">
         <h3>Rutas GPS Activas</h3>
-        <div class="number">{{ rutas_activas | default(3) }}</div>
+        <div class="number">{{ rutas_activas | default(0) }}</div>
       </div>
 
       <div class="kpi-card warning">

@@ -89,11 +89,7 @@
               <span class="badge badge-alta">Alta Médica</span>
               {% endif %}
             </td>
-            <td>
-              <a href="{{url_for('clinica_expedientePaciente')}}" class="btn-action btn-view">
-                <i class="fa-solid fa-folder-open"></i> Ver Expediente
-              </a>
-            </td>
+            <td> <a href="{{url_for('expedientePaciente')}}" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
           </tr>
           {% else %}
           <tr>
@@ -103,8 +99,7 @@
             <td>Tendinitis Bicipital<span class="sub-text">Terapia Física</span></td>
             <td><i class="fa-regular fa-calendar"></i> 18 Mar 2026</td>
             <td><span class="badge badge-activo">En Tratamiento</span></td>
-            <td><a href="{{url_for('clinica_expedientePaciente')}}" class="btn-action btn-view"><i
-                  class="fa-solid fa-folder-open"></i> Ver Expediente</a></td>
+            <td> <a href="{{url_for('expedientePaciente')}}" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
           </tr>
           <tr>
             <td><strong>PAC-1088</strong></td>
@@ -113,7 +108,7 @@
             <td>Post-operatorio Rodilla<span class="sub-text">Rehabilitación Ocupacional</span></td>
             <td><i class="fa-regular fa-calendar"></i> 20 Mar 2026</td>
             <td><span class="badge badge-activo">En Tratamiento</span></td>
-            <td><button class="btn-action btn-view"><i class="fa-solid fa-folder-open"></i> Ver Expediente</button></td>
+            <td> <a href="{{url_for('expedientePaciente')}}" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
           </tr>
           <tr>
             <td><strong>PAC-0950</strong></td>
@@ -122,7 +117,7 @@
             <td>Esguince Cervical<span class="sub-text">Terapia Física</span></td>
             <td><i class="fa-regular fa-calendar"></i> 10 Feb 2026</td>
             <td><span class="badge badge-alta">Alta Médica</span></td>
-            <td><button class="btn-action btn-view"><i class="fa-solid fa-folder-open"></i> Ver Expediente</button></td>
+            <td> <a href="{{url_for('expedientePaciente')}}" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
           </tr>
           {% endfor %}
         </tbody>
