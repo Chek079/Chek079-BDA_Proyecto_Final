@@ -13,9 +13,9 @@ def get_css():
 
     if rol == 'admin':
         return 'css/admin_base.css'
-    elif rol == 'doctor':
+    elif rol == 'terapeuta':
         return 'css/clinica_base.css'
-    elif rol == 'paciente':
+    elif rol == 'familiar':
         return 'css/publica_base.css'
     return 'css/admin_base.css'
 # ─── CONFIGURACIÓN DE BD ───────────────────────────────────────────────────────
