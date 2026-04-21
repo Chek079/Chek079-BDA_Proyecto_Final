@@ -31,7 +31,7 @@
       </li>
       <li><a href="{{url_for('clinica_sesionesDomicilio')}}"><i class="fa-solid fa-house-chimney-user"></i> Terapias
           Domicilio</a></li>
-      <li style="margin-top: auto;"><a href="{{url_for('principal')}}"><i
+      <li style="margin-top: auto;"><a href="{{url_for('logout')}}"><i
             class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
     </ul>
   </nav>
@@ -89,7 +89,7 @@
               <span class="badge badge-alta">Alta Médica</span>
               {% endif %}
             </td>
-            <td> <a href="{{url_for('expedientePaciente')}}" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
+            <td> <a href="{{url_for('expedientePaciente')}}?id_paciente={{ paciente.id_paciente }}" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
           </tr>
           {% else %}
           <tr>
@@ -99,7 +99,7 @@
             <td>Tendinitis Bicipital<span class="sub-text">Terapia Física</span></td>
             <td><i class="fa-regular fa-calendar"></i> 18 Mar 2026</td>
             <td><span class="badge badge-activo">En Tratamiento</span></td>
-            <td> <a href="{{url_for('expedientePaciente')}}" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
+            <td> <a href="{{url_for('expedientePaciente')}}?id_paciente=1" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
           </tr>
           <tr>
             <td><strong>PAC-1088</strong></td>
@@ -107,8 +107,8 @@
                 años</span></td>
             <td>Post-operatorio Rodilla<span class="sub-text">Rehabilitación Ocupacional</span></td>
             <td><i class="fa-regular fa-calendar"></i> 20 Mar 2026</td>
-            <td><span class="badge badge-activo">En Tratamiento</span></td>
-            <td> <a href="{{url_for('expedientePaciente')}}" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
+            <td><span class="badge badge-activo">En Tratamiento</span></t>
+            <td> <a href="{{url_for('expedientePaciente')}}?id_paciente=2" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
           </tr>
           <tr>
             <td><strong>PAC-0950</strong></td>
@@ -117,7 +117,7 @@
             <td>Esguince Cervical<span class="sub-text">Terapia Física</span></td>
             <td><i class="fa-regular fa-calendar"></i> 10 Feb 2026</td>
             <td><span class="badge badge-alta">Alta Médica</span></td>
-            <td> <a href="{{url_for('expedientePaciente')}}" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
+            <td> <a href="{{url_for('expedientePaciente')}}?id_paciente=3" class="btn-action btn-view"> <i class="fa-solid fa-folder-open"></i> Ver Expediente </a> </td>
           </tr>
           {% endfor %}
         </tbody>

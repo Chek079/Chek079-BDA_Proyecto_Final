@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro NFC - Rehab IoT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h2 { color: #1a3c5e; margin-bottom: 8px; }
+        p.sub  { color: #666; font-size: 14px; margin-bottom: 24px; }
+
+        .nfc-icon {
+            font-size: 80px;
+            margin: 20px 0;
+            transition: all 0.3s;
+        }
+        .nfc-icon.idle    { color: #cbd5e0; }
+        .nfc-icon.reading { color: #3b82f6; animation: pulse 1s infinite; }
+        .nfc-icon.success { color: #22c55e; }
+        .nfc-icon.error   { color: #ef4444; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1);    opacity: 1; }
+            50%       { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .status-box {
+            padding: 14px;
+            border-radius: 10px;
+            margin: 16px 0;
+            font-size: 15px;
+            font-weight: 500;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .status-idle    { background: #f1f5f9; color: #64748b; }
+        .status-reading { background: #eff6ff; color: #2563eb; }
+        .status-success { background: #f0fdf4; color: #16a34a; }
+        .status-error   { background: #fef2f2; color: #dc2626; }
+
+        .btn-scan {
+            width: 100%;
+            padding: 14px;
+            background: #1a3c5e;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-scan:hover    { background: #2d5986; }
+        .btn-scan:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        .result-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 16px;
+            text-align: left;
+            display: none;
+        }
+        .result-card.visible { display: block; }
+        .result-card p { font-size: 13px; color: #475569; margin-bottom: 6px; }
+        .result-card strong { color: #1a3c5e; }
+
+        .not-supported {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-top: 16px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2><i class="fa-solid fa-wifi"></i> Registro NFC</h2>
+        <p class="sub">Acerca la tarjeta o pulsera del paciente al teléfono</p>
+
+        <div class="nfc-icon idle" id="nfcIcon">
+            <i class="fa-solid fa-id-card"></i>
+        </div>
+
+        <div class="status-box status-idle" id="statusBox">
+            Listo para escanear
+        </div>
+
+        <button class="btn-scan" id="btnScan" onclick="iniciarScan()">
+            <i class="fa-solid fa-satellite-dish"></i> Iniciar Lectura NFC
+        </button>
+
+        <div class="result-card" id="resultCard">
+            <p>Paciente: <strong id="resNombre">—</strong></p>
+            <p>Sesión ID: <strong id="resSesion">—</strong></p>
+            <p>Hora: <strong id="resHora">—</strong></p>
+            <p>UID tarjeta: <strong id="resUID">—</strong></p>
+        </div>
+
+       
+    </div>
+
+    <script>
+        // Verifica soporte de Web NFC
+        if (!('NDEFReader' in window)) {
+            document.getElementById('notSupported').style.display = 'block';
+            document.getElementById('btnScan').disabled = true;
+        }
+
+        function setStatus(tipo, mensaje) {
+            const box  = document.getElementById('statusBox');
+            const icon = document.getElementById('nfcIcon');
+            box.className  = `status-box status-${tipo}`;
+            icon.className = `nfc-icon ${tipo}`;
+            box.textContent = mensaje;
+        }
+
+        async function iniciarScan() {
+            const btn = document.getElementById('btnScan');
+            btn.disabled = true;
+            setStatus('reading', 'Acerca la tarjeta NFC...');
+
+            try {
+                const ndef = new NDEFReader();
+                await ndef.scan();
+
+                ndef.onreading = async (event) => {
+                    const uid = event.serialNumber;  // UID de la tarjeta
+                    setStatus('reading', `Tarjeta detectada: ${uid} — Registrando...`);
+
+                    await registrarAsistencia(uid);
+                };
+
+                ndef.onreadingerror = () => {
+                    setStatus('error', 'Error al leer la tarjeta. Intenta de nuevo.');
+                    btn.disabled = false;
+                };
+
+            } catch (error) {
+                setStatus('error', `Error: ${error.message}`);
+                btn.disabled = false;
+            }
+        }
+
+        async function registrarAsistencia(uid) {
+            const btn = document.getElementById('btnScan');
+            try {
+                const response = await fetch('/nfc/registrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: uid })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    setStatus('success', `✅ ${data.mensaje}`);
+                    // Mostrar resultado
+                    document.getElementById('resultCard').classList.add('visible');
+                    document.getElementById('resNombre').textContent = data.paciente  || '—';
+                    document.getElementById('resSesion').textContent = data.id_sesion || '—';
+                    document.getElementById('resHora').textContent   = data.hora      || '—';
+                    document.getElementById('resUID').textContent    = uid;
+                } else {
+                    setStatus('error', `❌ ${data.mensaje}`);
+                }
+            } catch (error) {
+                setStatus('error', 'No se pudo conectar con el servidor.');
+            }
+
+            // Resetear botón después de 3 segundos
+            setTimeout(() => {
+                btn.disabled = false;
+                setStatus('idle', 'Listo para escanear');
+                document.getElementById('resultCard').classList.remove('visible');
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

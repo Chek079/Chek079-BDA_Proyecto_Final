@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import psycopg2
 import psycopg2.extras
 from functools import wraps
@@ -582,20 +582,6 @@ def clinica_expedienteSesion():
 def clinica_registrarSesion():
     return render_template('clinica_registrarSesion.html')
 
-@app.route('/clinica/paciente/expediente')
-@login_required
-@role_required('terapeuta')
-def clinica_expedientePaciente():
-    id_paciente = request.args.get('id_paciente', type=int)
-    try:
-        paciente = query(
-            "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
-            (id_paciente,), fetchone=True
-        )
-    except Exception:
-        paciente = None
-    return render_template('clinica_expediente_paciente.html', paciente=paciente)
-
 
 @app.route('/clinica/sesion/iniciar/<int:id_sesion>', methods=['POST', 'GET'])
 @login_required
@@ -627,6 +613,70 @@ def clinica_finalizarSesionReal(id_sesion):
         flash(f'Error: {e}', 'error')
     return redirect(url_for('clinica_dashboard'))
 
+
+
+
+@app.route('/clinica/paciente/expediente')
+@login_required
+@role_required('terapeuta')
+def clinica_expedientePaciente():
+    id_paciente = request.args.get('id_paciente', type=int)
+    try:
+        paciente = query(
+            "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
+            (id_paciente,), fetchone=True
+        )
+        proxima_sesion = query(
+            """SELECT s.fecha, s.hora_inicio, s.hora_fin, ts.nombre AS tipo_sesion
+               FROM paciente_sesion ps
+               JOIN sesiones s ON s.id_sesion = ps.id_sesion
+               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+               WHERE ps.id_paciente = %s AND s.fecha >= CURRENT_DATE
+               ORDER BY s.fecha, s.hora_inicio LIMIT 1""",
+            (id_paciente,), fetchone=True
+        )
+        ultima_sesion = query(
+            """SELECT s.fecha, s.hora_inicio, s.hora_fin,
+                      s.asistencia, s.observaciones_clinicas,
+                      ts.nombre AS tipo_sesion
+               FROM paciente_sesion ps
+               JOIN sesiones s ON s.id_sesion = ps.id_sesion
+               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+               WHERE ps.id_paciente = %s AND s.fecha < CURRENT_DATE
+               ORDER BY s.fecha DESC, s.hora_inicio DESC LIMIT 1""",
+            (id_paciente,), fetchone=True
+        )
+        ejercicios_actuales = query(
+            """SELECT DISTINCT e.nombre_ejercicio, esd.repeticiones, esd.duracion_min
+               FROM ejercicio_sesion_detalle esd
+               JOIN sesiones s ON s.id_sesion = esd.id_sesion
+               JOIN paciente_sesion ps ON ps.id_sesion = s.id_sesion
+               JOIN ejercicios e ON e.id_ejercicio = esd.id_ejercicio
+               WHERE ps.id_paciente = %s
+               ORDER BY e.nombre_ejercicio""",
+            (id_paciente,), fetchall=True
+        )
+        sesiones_anteriores = query(
+            """SELECT s.fecha, s.hora_inicio, s.asistencia,
+                      s.observaciones_clinicas, ts.nombre AS tipo_sesion
+               FROM paciente_sesion ps
+               JOIN sesiones s ON s.id_sesion = ps.id_sesion
+               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+               WHERE ps.id_paciente = %s
+               ORDER BY s.fecha DESC, s.hora_inicio DESC
+               LIMIT 10""",
+            (id_paciente,), fetchall=True
+        )
+    except Exception:
+        paciente = proxima_sesion = ultima_sesion = None
+        ejercicios_actuales = sesiones_anteriores = []
+
+    return render_template('clinica_expediente_paciente.html',
+                           paciente=paciente,
+                           proxima_sesion=proxima_sesion,
+                           ultima_sesion=ultima_sesion,
+                           ejercicios_actuales=ejercicios_actuales or [],
+                           sesiones_anteriores=sesiones_anteriores or [])
 
 
 
@@ -696,11 +746,68 @@ def publica_sesiones():
                            historial_paciente=historial_paciente or [])
 
 
+
 @app.route('/paciente/info')
 @login_required
 def expedientePaciente():
-    paciente = None
-    return render_template('publica_paciente.html', css_file=get_css(), paciente=paciente,  )
+    id_paciente = request.args.get('id_paciente', type=int)
+    try:
+        paciente = query(
+            "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
+            (id_paciente,), fetchone=True
+        )
+        proxima_sesion = query(
+            """SELECT s.fecha, s.hora_inicio, s.hora_fin, ts.nombre AS tipo_sesion
+               FROM paciente_sesion ps
+               JOIN sesiones s ON s.id_sesion = ps.id_sesion
+               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+               WHERE ps.id_paciente = %s AND s.fecha >= CURRENT_DATE
+               ORDER BY s.fecha, s.hora_inicio LIMIT 1""",
+            (id_paciente,), fetchone=True
+        )
+        ultima_sesion = query(
+            """SELECT s.fecha, s.hora_inicio, s.hora_fin,
+                      s.asistencia, s.observaciones_clinicas,
+                      ts.nombre AS tipo_sesion
+               FROM paciente_sesion ps
+               JOIN sesiones s ON s.id_sesion = ps.id_sesion
+               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+               WHERE ps.id_paciente = %s AND s.fecha < CURRENT_DATE
+               ORDER BY s.fecha DESC LIMIT 1""",
+            (id_paciente,), fetchone=True
+        )
+        ejercicios_actuales = query(
+            """SELECT DISTINCT e.nombre_ejercicio, esd.repeticiones, esd.duracion_min
+               FROM ejercicio_sesion_detalle esd
+               JOIN sesiones s ON s.id_sesion = esd.id_sesion
+               JOIN paciente_sesion ps ON ps.id_sesion = s.id_sesion
+               JOIN ejercicios e ON e.id_ejercicio = esd.id_ejercicio
+               WHERE ps.id_paciente = %s
+               ORDER BY e.nombre_ejercicio""",
+            (id_paciente,), fetchall=True
+        )
+        sesiones_anteriores = query(
+            """SELECT s.fecha, s.hora_inicio, s.asistencia,
+                      s.observaciones_clinicas, ts.nombre AS tipo_sesion
+               FROM paciente_sesion ps
+               JOIN sesiones s ON s.id_sesion = ps.id_sesion
+               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+               WHERE ps.id_paciente = %s
+               ORDER BY s.fecha DESC LIMIT 10""",
+            (id_paciente,), fetchall=True
+        )
+    except Exception:
+        paciente = proxima_sesion = ultima_sesion = None
+        ejercicios_actuales = sesiones_anteriores = []
+
+    return render_template('clinica_expediente_paciente.html',
+                           paciente=paciente,
+                           proxima_sesion=proxima_sesion,
+                           ultima_sesion=ultima_sesion,
+                           ejercicios_actuales=ejercicios_actuales or [],
+                           sesiones_anteriores=sesiones_anteriores or [])
+
+
 
 @app.route('/back/paciente')
 @login_required
@@ -711,6 +818,84 @@ def back_paciente():
         return redirect(url_for('clinica_obtenerPacientes')) # Redirige a la pantalla de pacientes de clinica
     else:
         return redirect(url_for('publica_dashboard')) # Redirige a la pantalla principal de admin
+
+
+
+
+@app.route('/nfc')
+@login_required
+@role_required('admin', 'terapeuta')
+def nfc_scanner():
+    return render_template('nfc_scanner.html')
+
+
+@app.route('/nfc/registrar', methods=['POST'])
+@login_required
+@role_required('admin', 'terapeuta')
+def nfc_registrar():
+    from datetime import datetime
+    data = request.get_json()
+    uid  = data.get('uid', '').strip()
+
+    if not uid:
+        return jsonify({'success': False, 'mensaje': 'UID vacío.'})
+
+    try:
+        # Buscar paciente por UID del keyfob
+        paciente = query(
+            "SELECT id_paciente, nombre || ' ' || apellido_paterno AS nombre_completo FROM pacientes WHERE nfc_uid = %s",
+            (uid,), fetchone=True
+        )
+        if not paciente:
+            return jsonify({'success': False, 'mensaje': f'Tarjeta no registrada. UID: {uid}'})
+
+        id_paciente = paciente['id_paciente']
+        nombre      = paciente['nombre_completo']
+
+        # Buscar sesión de hoy para ese paciente
+        sesion = query(
+            """SELECT s.id_sesion FROM paciente_sesion ps
+               JOIN sesiones s ON s.id_sesion = ps.id_sesion
+               WHERE ps.id_paciente = %s AND s.fecha = CURRENT_DATE
+               ORDER BY s.hora_inicio LIMIT 1""",
+            (id_paciente,), fetchone=True
+        )
+        if not sesion:
+            return jsonify({'success': False, 'mensaje': f'{nombre} no tiene sesión para hoy.'})
+
+        id_sesion = sesion['id_sesion']
+
+        # Verificar que no esté ya registrado
+        ya_registrado = query(
+            "SELECT 1 FROM asistencias_nfc WHERE id_paciente = %s AND id_sesion = %s",
+            (id_paciente, id_sesion), fetchone=True
+        )
+        if ya_registrado:
+            return jsonify({'success': False, 'mensaje': f'{nombre} ya tiene asistencia registrada.'})
+
+        # Registrar asistencia
+        hora_ahora = datetime.now().strftime('%H:%M:%S')
+        fecha_hoy  = datetime.now().strftime('%Y-%m-%d')
+
+        query(
+            """INSERT INTO asistencias_nfc
+               (id_paciente, id_sesion, fecha, hora_entrada, asistencia_confirmada, id_dispositivo)
+               VALUES (%s, %s, %s::DATE, %s::TIME, TRUE, 1)""",
+            (id_paciente, id_sesion, fecha_hoy, hora_ahora),
+            commit=True
+        )
+
+        return jsonify({
+            'success':   True,
+            'mensaje':   f'Asistencia registrada para {nombre}',
+            'paciente':  nombre,
+            'id_sesion': id_sesion,
+            'hora':      hora_ahora
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'mensaje': f'Error: {e}'})
+
 
 if __name__ == "__main__":
     app.run(debug=True)

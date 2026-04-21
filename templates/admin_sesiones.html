@@ -78,13 +78,11 @@
           </td>
 
           <td>
-            {% if s.asistencia == 'Presente' %}
-            <span class="badge badge-presente">Presente</span>
-            {% elif s.asistencia == 'Ausente' %}
-            <span class="badge badge-ausente">Ausente</span>
-            {% else %}
-            <span class="badge badge-pendiente">{{ s.asistencia }}</span>
-            {% endif %}
+            {% if s.asistencia %}
+    <span class="badge badge-presente" style="background:#dcfce7; color:#16a34a; padding:4px 10px; border-radius:6px; font-weight:600;">✓ Presente</span>
+{% else %}
+    <span class="badge badge-pendiente" style="background:#fef9c3; color:#854d0e; padding:4px 10px; border-radius:6px; font-weight:600;">⏳ Pendiente</span>
+{% endif %}
           </td>
 
           <td>
