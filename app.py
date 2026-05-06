@@ -372,11 +372,13 @@ def admin_editar_paciente(id_paciente):
             (id_paciente,), fetchone=True
         )
         sexos = query("SELECT * FROM cat_sexo WHERE activo = TRUE", fetchall=True)
+        terapeutas = query(
+            "SELECT * FROM vw_terapeutas_completo", fetchall=True)
     except Exception:
-        paciente, sexos = None, []
+        paciente, terapeutas, sexos = None, []
 
-    return render_template('admin_registrarPaciente.html', 
-                           paciente=paciente, sexos=sexos or [])
+    return render_template('admin_actualizarPaciente.html', 
+                           paciente=paciente, terapeutas=terapeutas or [],sexos=sexos or [])
 
 
 

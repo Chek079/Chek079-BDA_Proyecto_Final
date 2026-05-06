@@ -70,7 +70,7 @@
           <td class="action-btns">
             <a href="/paciente/editar/{{ p.id_paciente }}" class="btn btn-edit">Editar</a>
 
-            <form action="/paciente/eliminar/{{ p.id_paciente }}" method="POST"
+            <form action="/admin/paciente/eliminar/{{ p.id_paciente }}" method="POST"
               onsubmit="return confirm('¿Eliminar permanentemente al paciente {{ p.nombre }}?');">
               <button type="submit" class="btn btn-delete">Eliminar</button>
             </form>
