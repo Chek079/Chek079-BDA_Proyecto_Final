@@ -235,12 +235,10 @@ def admin_registrarTerapeutas():
     if request.method == 'POST':
         f = request.form
         try:
-            query(
-                "CALL sp_insertar_terapeuta(%s,%s,%s,%s::INTEGER,%s,%s,%s)",
+            query( "CALL sp_insertar_terapeuta(%s,%s,%s,%s::INTEGER,%s,%s,%s)",
                 (f['nombre'], f['apellido_paterno'], f['apellido_materno'],
                  int(f['especialidad']), f.get('telefono'),
-                 f.get('correo'), f.get('observaciones')),
-                commit=True
+                 f.get('correo'), f.get('observaciones')), commit=True
             )
             flash('Terapeuta registrado.', 'success')
             return redirect(url_for('admin_obtenerTerapeutas'))
@@ -382,24 +380,40 @@ def admin_editar_paciente(id_paciente):
 
 
 
-
-@app.route('/terapeuta/editar/<int:id_terapeuta>', methods=['GET', 'POST'])
+@app.route('/admin/terapeuta/editar/<int:id_terapeuta>', methods=['GET', 'POST'])
 @login_required
 @role_required('admin')
 def admin_editar_terapeuta(id_terapeuta):
+
     if request.method == 'POST':
         f = request.form
+
+        id_especialidad = f.get('especialidad')
+        if not id_especialidad:
+            flash('Selecciona una especialidad.', 'error')
+            return redirect(request.url)
+
         try:
+            id_especialidad = int(id_especialidad)
+
             query(
-                "CALL sp_actualizar_terapeuta(%s,%s,%s,%s,%s::INTEGER,%s,%s,%s)",
-                (id_terapeuta,
-                 f['nombre'], f['apellido_paterno'], f['apellido_materno'],
-                 int(f['especialidad']), f.get('telefono'),
-                 f.get('correo'), f.get('observaciones')),
+                "CALL sp_actualizar_terapeuta(%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    id_terapeuta,
+                    f.get('nombre'),
+                    f.get('apellido_paterno'),
+                    f.get('apellido_materno'),
+                    id_especialidad,
+                    f.get('telefono'),
+                    f.get('correo'),
+                    f.get('observaciones')
+                ),
                 commit=True
             )
+
             flash('Terapeuta actualizado.', 'success')
             return redirect(url_for('admin_obtenerTerapeutas'))
+
         except Exception as e:
             flash(f'Error: {e}', 'error')
 
@@ -408,15 +422,20 @@ def admin_editar_terapeuta(id_terapeuta):
             "SELECT * FROM vw_terapeutas_completo WHERE id_terapeuta = %s",
             (id_terapeuta,), fetchone=True
         )
+
         especialidades = query(
-            "SELECT * FROM cat_especialidades WHERE activo = TRUE", fetchall=True
+            "SELECT * FROM cat_especialidades WHERE activo = TRUE",
+            fetchall=True
         )
+
     except Exception:
         terapeuta, especialidades = None, []
 
-    return render_template('admin_registrarTerapeuta.html',
-                           terapeuta=terapeuta, especialidades=especialidades or [])
-
+    return render_template(
+        'admin_actualizarTerapeuta.html',
+        terapeuta=terapeuta,
+        especialidades=especialidades or []
+    )
 
 
 

@@ -72,11 +72,11 @@ body {
 }
 
 .form-control:focus {
-  border-color: var(--accent-teal);
+  border-color: var(--accent);
 }
 
 .btn-submit {
-  background: var(--accent-teal);
+  background: var(--accent);
   color: var(--white);
   padding: 12px 20px;
   border: none;

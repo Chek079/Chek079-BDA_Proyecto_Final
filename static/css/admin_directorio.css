@@ -19,7 +19,7 @@ body {
   border-radius: 6px;
   outline: none;
 }
-.search-box:focus { border-color: var(--primary-blue); }
+.search-box:focus { border-color: var(--primary); }
 
 table { 
   width: 100%;
@@ -37,7 +37,7 @@ th {
   text-align: left;
 }
 th:hover { 
-  background-color: var(--hover-blue);
+  background-color: var(--hover);
   color: var(--white);
 }
 td { 
@@ -56,7 +56,7 @@ td {
 .action-btns { display: flex; gap: 10px; }
 
 /* Etiquetas de estado (Badges) */
-.badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; color: var(--white); display: inline-block; }
+.badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; color: var(--primary); display: inline-block; }
 .badge-presente { background-color: var(--success); }
 .badge-ausente { background-color: var(--danger-red); }
 .badge-pendiente { background-color: var(--warning); }

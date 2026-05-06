@@ -8,7 +8,7 @@
   background-color: var(--white);
   padding: 20px 30px;
   border-radius: 10px;
-  border-left: 6px solid var(--primary-blue);
+  border-left: 6px solid var(--primary);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   margin-bottom: 20px;
   display: flex;
@@ -18,7 +18,7 @@
 
 .header-card h1 {
   margin: 0 0 5px 0;
-  color: var(--primary-blue);
+  color: var(--primary);
 }
 
 .header-card p {
@@ -43,7 +43,7 @@
 
 .card h3 {
   margin-top: 0;
-  color: var(--primary-blue);
+  color: var(--primary);
   border-bottom: 2px solid var(--bg-gray);
   padding-bottom: 10px;
 }
@@ -86,7 +86,7 @@ th {
 }
 
 .badge {
-  background-color: #EBF4FF;
+  background-color: var(--primary);
   color: #3182CE;
   padding: 4px 8px;
   border-radius: 12px;

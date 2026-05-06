@@ -101,3 +101,26 @@ body {
 .btn-delete {
   background-color: var(--danger-red);
 }
+
+.flash-container {
+  margin-bottom: 15px;
+}
+
+.flash {
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* Éxito */
+.flash.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+/* Error */
+.flash.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}

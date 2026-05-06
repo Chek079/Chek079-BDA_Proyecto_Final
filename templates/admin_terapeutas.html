@@ -66,9 +66,9 @@
             <span class="sub-text"><i class="fa-solid fa-envelope" style="font-size: 12px;"></i> {{ t.correo }}</span>
           </td>
           <td class="action-btns">
-            <a href="/terapeuta/editar/{{ t.id_terapeuta }}" class="btn btn-edit">Editar</a>
+            <a href="/admin/terapeuta/editar/{{ t.id_terapeuta }}" class="btn btn-edit">Editar</a>
 
-            <form action="/terapeuta/eliminar/{{ t.id_terapeuta }}" method="POST"
+            <form action="/admin/terapeuta/eliminar/{{ t.id_terapeuta }}" method="POST"
               onsubmit="return confirm('¿Eliminar permanentemente al terapeuta {{ t.nombre }}?');">
               <button type="submit" class="btn btn-delete">Eliminar</button>
             </form>

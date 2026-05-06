@@ -159,13 +159,8 @@ CREATE OR REPLACE PROCEDURE sp_insertar_terapeuta(
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-  INSERT INTO terapeutas (
-    nombre, apellido_paterno, apellido_materno,
-    id_especialidad, telefono, correo, observaciones
-    ) VALUES (
-    p_nombre, p_ap_paterno, p_ap_materno,
-    p_id_especialidad, p_telefono, p_correo, p_observaciones
-  );
+  INSERT INTO terapeutas ( nombre, apellido_paterno, apellido_materno, id_especialidad, telefono, correo, observaciones) VALUES (
+    p_nombre, p_ap_paterno, p_ap_materno, p_id_especialidad, p_telefono, p_correo, p_observaciones);
 END;
 $$;
 
