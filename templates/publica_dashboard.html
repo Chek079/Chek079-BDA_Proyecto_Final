@@ -19,7 +19,7 @@
     </div>
     <ul class="nav-links">
       <li><a href="{{url_for('publica_dashboard')}}" class="active"><i class="fa-solid fa-chart-pie"></i> Resumen General</a></li>
-      <li><a href="{{url_for('publica_paciente')}}"><i class="fa-solid fa-circle-user"></i>Mi perfil</a></li>
+      <li><a href="{{url_for('expedientePaciente')}}" ><i class="fa-solid fa-circle-user"></i>Mi perfil</a></li>
       <li><a href="{{url_for('publica_sesiones')}}"><i class="fa-solid fa-clock-rotate-left"></i> Historial de Sesiones</a></li>
       <li style="margin-top: auto;"><a href="{{url_for('logout')}}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
     </ul>
@@ -37,16 +37,36 @@
       <div class="grid">
 
         <div class="card highlight">
-          <h3>🗓️ Tu próxima sesión</h3>
+          <h3> Tu próxima sesión</h3>
+          {% if proxima_sesion %}
+          <p>Fecha: {{ proxima_sesion.fecha }}</p>
+          <p>Hora: {{ proxima_sesion.hora_inicio }}</p>
+          <p>Tipo: {{ proxima_sesion.tipo_sesion }}</p>
+          {% else %}
+          <p>No hay sesiones programadas.</p>
+          {% endif %}
         </div>
 
         <div class="card">
-          <h3>🕰️ Tu última sesión</h3>
+          <h3> Tu última sesión</h3>
+          {% if ultima_sesion %}
+          <p>Fecha: {{ ultima_sesion.fecha }}</p>
+          <p>Observaciones: {{ ultima_sesion.observaciones_clinicas }}</p>
+          {% else %}
+          <p>No hay registro anterior.</p>
+          {% endif %}
         </div>
 
         <div class="card">
-          <h3>📝 Ejercicios asignados</h3>
+          <h3> Ejercicios asignados</h3>
           <ul class="exercise-list">
+            {% if ejercicios_actuales %}
+            {% for e in ejercicios_actuales %}
+            <li>{{ e.nombre_ejercicio }} - {{ e.repeticiones }} reps ({{ e.duracion_min }} min)</li>
+            {% endfor %}
+            {% else %}
+            <li>No tiene ejercicios asignados</li>
+            {% endif %}
           </ul>
         </div>
       </div>

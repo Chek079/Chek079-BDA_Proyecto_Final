@@ -634,9 +634,6 @@ def clinica_finalizarSesionReal(id_sesion):
         flash(f'Error: {e}', 'error')
     return redirect(url_for('clinica_dashboard'))
 
-
-
-
 @app.route('/clinica/paciente/expediente')
 @login_required
 @role_required('terapeuta')
@@ -767,11 +764,14 @@ def publica_sesiones():
                            historial_paciente=historial_paciente or [])
 
 
-
-@app.route('/paciente/info')
+@app.route('/paciente/info/')
 @login_required
+@role_required('familiar')
 def expedientePaciente():
-    id_paciente = request.args.get('id_paciente', type=int)
+    id_paciente = request.args.get('id_paciente', type=int) or session.get('ref_id')
+    if not id_paciente:
+        flash('No se pudo determinar el paciente.')
+        return redirect(url_for('publica_dashboard'))
     try:
         paciente = query(
             "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
@@ -821,7 +821,7 @@ def expedientePaciente():
         paciente = proxima_sesion = ultima_sesion = None
         ejercicios_actuales = sesiones_anteriores = []
 
-    return render_template('clinica_expediente_paciente.html',
+    return render_template('publica_paciente.html',
                            paciente=paciente,
                            proxima_sesion=proxima_sesion,
                            ultima_sesion=ultima_sesion,
