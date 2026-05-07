@@ -49,8 +49,6 @@ def query(sql, params=None, fetchone=False, fetchall=False, commit=False):
         conn.close()
 
 
-
-
 def call_procedure_out(sql, params=None):
     """Ejecuta un CALL con params OUT y devuelve los resultados como dict."""
     conn = get_db()
@@ -338,10 +336,22 @@ def admin_obtenerBeacons():
 @role_required('admin')
 def admin_reportes():
     try:
-        resumen = query("SELECT * FROM vw_reporte_asistencia", fetchall=True)
+        kpi = {
+            "pacientes_activos": query("""SELECT COUNT(DISTINCT id_paciente) AS pacientes_activos FROM paciente_sesion;""", fetchone=True)["pacientes_activos"],
+
+            "sesiones_hoy": query("""SELECT COUNT(*) AS sesiones_hoy FROM sesiones WHERE fecha = CURRENT_DATE;""", fetchone=True)["sesiones_hoy"],
+
+            "tasa_aderencia": query("""SELECT ROUND((COUNT(CASE WHEN asistencia = TRUE THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2) AS tasa_asistencia FROM sesiones;""", fetchone=True)["tasa_asistencia"],
+
+            "efectividad_promedio": query("""SELECT ROUND(AVG((nivel_movilidad + resistencia + (10 - nivel_dolor)) / 3.0), 2) AS efectividad_promedio FROM evaluaciones_progreso;""", fetchone=True)["efectividad_promedio"],
+
+            "sesiones_finalizadas": query("""SELECT COUNT(*) AS sesiones_finalizadas FROM sesiones WHERE estado_sesion = 'FINALIZADA';""", fetchone=True)["sesiones_finalizadas"],
+
+            "tiempo_promedio_sesion": query("""SELECT ROUND( AVG( EXTRACT(EPOCH FROM (hora_fin_real - hora_inicio_real)) / 60), 2) AS tiempo_promedio_minutos FROM sesiones WHERE hora_inicio_real IS NOT NULL AND hora_fin_real IS NOT NULL;""", fetchone=True)["tiempo_promedio_minutos"]
+            }
     except Exception:
-        resumen = []
-    return render_template('admin_reportes.html', resumen=resumen or [])
+        kpi = {}
+    return render_template('admin_reportes.html', kpi=kpi)
 
 
 
@@ -477,8 +487,26 @@ def admin_editar_sesion(id_sesion):
                            metodos=metodos or [])
 
 
+@app.route('/api/kpi/tendencia-asistencias')
+@login_required
+@role_required('admin')
+def api_tendencia_asistencias():
 
+    dias = request.args.get('dias', default=30, type=int)
 
+    res = query("""
+        SELECT fecha_registro, total_asistencias,
+            total_cancelaciones
+        FROM vw_kpi_tendencia_asistencias
+        WHERE fecha >= CURRENT_DATE - (%s || ' days')::INTERVAL
+        ORDER BY fecha ASC
+    """, (dias,), fetchall=True)
+
+    return jsonify({
+        "fechas": [r['fecha_registro'] for r in res],
+        "asistencias": [r['total_asistencias'] for r in res],
+        "cancelaciones": [r['total_cancelaciones'] for r in res]
+    })
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -550,8 +578,6 @@ def clinica_obtenerSesiones():
                            kpi_completadas=kpis['o_atendidos']   if kpis else 0,
                            kpi_pacientes=kpis['o_pac_unicos']    if kpis else 0,
                            kpi_faltas=kpis['o_faltas']           if kpis else 0)
-
-
 
 @app.route('/historial_diario')
 @login_required
@@ -763,7 +789,6 @@ def publica_sesiones():
                            paciente=paciente,
                            historial_paciente=historial_paciente or [])
 
-
 @app.route('/paciente/info/')
 @login_required
 @role_required('familiar')
@@ -828,8 +853,6 @@ def expedientePaciente():
                            ejercicios_actuales=ejercicios_actuales or [],
                            sesiones_anteriores=sesiones_anteriores or [])
 
-
-
 @app.route('/back/paciente')
 @login_required
 def back_paciente():
@@ -840,15 +863,11 @@ def back_paciente():
     else:
         return redirect(url_for('publica_dashboard')) # Redirige a la pantalla principal de admin
 
-
-
-
 @app.route('/nfc')
 @login_required
 @role_required('admin', 'terapeuta')
 def nfc_scanner():
     return render_template('nfc_scanner.html')
-
 
 @app.route('/nfc/registrar', methods=['POST'])
 @login_required
@@ -916,7 +935,6 @@ def nfc_registrar():
 
     except Exception as e:
         return jsonify({'success': False, 'mensaje': f'Error: {e}'})
-
 
 if __name__ == "__main__":
     app.run(debug=True)

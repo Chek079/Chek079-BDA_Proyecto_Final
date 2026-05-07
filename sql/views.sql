@@ -273,3 +273,14 @@ JOIN  pacientes p ON p.id_paciente = ps.id_paciente
 JOIN  sesiones  s ON s.id_sesion   = ps.id_sesion
 GROUP BY p.id_paciente, p.nombre, p.apellido_paterno
 ORDER BY porcentaje_asistencia DESC;
+
+--── vw_kpi_tendencia_asistencias ────────────────────────────────────
+CREATE OR REPLACE VIEW vw_kpi_tendencia_asistencias AS
+SELECT 
+    TO_CHAR(fecha, 'YYYY-MM-DD') AS fecha_registro,
+    fecha,
+    COUNT(CASE WHEN asistencia = TRUE THEN 1 END) AS total_asistencias,
+    COUNT(CASE WHEN asistencia = FALSE THEN 1 END) AS total_cancelaciones
+FROM vw_sesiones_detalle
+GROUP BY fecha
+ORDER BY fecha ASC;

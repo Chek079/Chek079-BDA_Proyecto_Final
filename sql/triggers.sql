@@ -40,15 +40,15 @@ FOR EACH ROW EXECUTE FUNCTION fn_trg_validar_horario();
 
 
     -- ── trg_crear_usuario_terapeuta ───────────────────────────────
-    CREATE OR REPLACE FUNCTION fn_trg_crear_usuario_terapeuta()
-    RETURNS TRIGGER LANGUAGE plpgsql AS $$
-    BEGIN
-      INSERT INTO usuarios (login, password, rol, ref_id)
-      VALUES ('ter_' || NEW.id_terapeuta, '1234', 'terapeuta', NEW.id_terapeuta)
-      ON CONFLICT (login) DO NOTHING;
-      RETURN NEW;
-    END;
-    $$;
+  CREATE OR REPLACE FUNCTION fn_trg_crear_usuario_terapeuta()
+  RETURNS TRIGGER LANGUAGE plpgsql AS $$
+  BEGIN
+    INSERT INTO usuarios (login, password, rol, ref_id)
+    VALUES ('ter_' || NEW.id_terapeuta, '1234', 'terapeuta', NEW.id_terapeuta)
+    ON CONFLICT (login) DO NOTHING;
+    RETURN NEW;
+  END;
+  $$;
 
     DROP TRIGGER IF EXISTS trg_crear_usuario_terapeuta ON terapeutas;
     CREATE TRIGGER trg_crear_usuario_terapeuta

@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analítica y Reportes - Rehab IoT</title>
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{url_for('static',filename='css/admin_base.css')}}">
     <link rel="stylesheet" href="{{url_for('static',filename='css/admin_reportes.css')}}">
     <style>
     </style>
-</head>
-<body>
+  </head>
+  <body>
 
-    <!-- Inicio de SIDEBAR -->
     <nav class="sidebar">
       <div class="sidebar-header">
-        <h1> Rehab IoT <h1>
+        <h1> Rehab IoT </h1>
       </div>
       <ul class="nav-links">
         <li><a href="{{url_for('admin_dashboard')}}" ><i class="fa-solid fa-arrows-to-circle"></i> Dashboard</a></li>
@@ -28,100 +27,84 @@
         <li><a href="{{url_for('logout')}}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
       </ul>
     </nav>
-    <!-- Fin de SIDEBAR -->
-
     <main class="main-content">
-        
-        <div class="header-actions">
-            <div>
-                <h2>Inteligencia y Analítica Clínica</h2>
-                <p>Métricas de efectividad, asistencia y desempeño predictivo.</p>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <select class="date-filter">
-                    <option>Últimos 30 días</option>
-                    <option>Este Trimestre</option>
-                    <option>Este Año</option>
-                    <option>Histórico Completo</option>
-                </select>
-                <button class="btn btn-export" onclick="window.print()">
-                    <i class="fa-solid fa-file-pdf"></i> Exportar PDF
-                </button>
-            </div>
+
+      <div class="header-actions">
+        <div>
+          <h2>Inteligencia y Analítica Clínica</h2>
+          <p>Métricas de efectividad, asistencia y desempeño predictivo.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-export" onclick="window.print()">
+            <i class="fa-solid fa-file-pdf"></i> Exportar PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon"><i class="fa-solid fa-user-check"></i></div>
+          <div class="kpi-info">
+            <h4>Efectividad Promedio</h4>
+            <p class="value">{{ kpi.get("efectividad_promedio", 0) }}%</p>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon"><i class="fa-solid fa-user-check"></i></div>
+          <div class="kpi-info">
+            <h4>Tasa de aderencia</h4>
+            <p class="value">{{ kpi.get("tasa_aderencia", 0) }}%</p>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon"><i class="fa-solid fa-user-check"></i></div>
+          <div class="kpi-info">
+            <h4>Paciente Activos</h4>
+            <p class="value">{{ kpi.get("pacientes_activos", 0) }}</p>
+          </div>
         </div>
 
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-icon"><i class="fa-solid fa-user-check"></i></div>
-                <div class="kpi-info">
-                    <h4>Tasa de Adherencia</h4>
-                    <p class="value">{{ kpi_adherencia | default('87%') }}</p>
-                    <span class="trend"><i class="fa-solid fa-arrow-trend-up"></i> +5% vs mes anterior</span>
-                </div>
-            </div>
-            
-            <div class="kpi-card" style="border-left-color: var(--accent-teal);">
-                <div class="kpi-icon" style="color: var(--accent-teal);"><i class="fa-solid fa-heart-pulse"></i></div>
-                <div class="kpi-info">
-                    <h4>Efectividad Promedio</h4>
-                    <p class="value">{{ kpi_efectividad | default('92%') }}</p>
-                    <span class="trend"><i class="fa-solid fa-arrow-trend-up"></i> Alta mejora clínica</span>
-                </div>
-            </div>
-
-            <div class="kpi-card" style="border-left-color: var(--warning);">
-                <div class="kpi-icon" style="color: var(--warning);"><i class="fa-solid fa-clock"></i></div>
-                <div class="kpi-info">
-                    <h4>Tiempo Promedio Sesión</h4>
-                    <p class="value">{{ kpi_tiempo | default('45 min') }}</p>
-                    <span class="trend negative"><i class="fa-solid fa-arrow-trend-down"></i> -2 min (Óptimo)</span>
-                </div>
-            </div>
-
-            <div class="kpi-card" style="border-left-color: var(--success-green);">
-                <div class="kpi-icon" style="color: var(--success-green);"><i class="fa-solid fa-microchip"></i></div>
-                <div class="kpi-info">
-                    <h4>Registros IoT (NFC/Beacon)</h4>
-                    <p class="value">{{ kpi_iot | default('1,240') }}</p>
-                    <span class="trend"><i class="fa-solid fa-arrow-trend-up"></i> +12% automatización</span>
-                </div>
-            </div>
+        <div class="kpi-card" style="border-left-color: var(--accent-teal);">
+          <div class="kpi-icon" style="color: var(--accent-teal);"><i class="fa-solid fa-heart-pulse"></i></div>
+          <div class="kpi-info">
+            <h4>Sesiones de Hoy</h4>
+            <p class="value">{{ kpi.get("sesiones_hoy", 0) }} sesiones</p>
+            <span class="trend"><i class="fa-solid fa-arrow-trend-up"></i> Alta mejora clínica</span>
+          </div>
         </div>
 
-        <div class="charts-grid">
-            
-            <div class="chart-container chart-full-width">
-                <div class="chart-header">
-                    <h3>Tendencia de Asistencias y Cancelaciones</h3>
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="tendenciaChart"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-header">
-                    <h3>Efectividad por Tipo de Terapia</h3>
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="efectividadChart"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-header">
-                    <h3>Métodos de Registro de Sesiones</h3>
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="metodosChart"></canvas>
-                </div>
-            </div>
-
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-icon" style="color: var(--warning);"><i class="fa-solid fa-clock"></i></div>
+          <div class="kpi-info">
+            <h4>Tiempo Promedio Sesión</h4>
+            <p class="value">{{ kpi.get("tiempo_promedio_sesion", 0)}} min</p>
+            <span class="trend negative"><i class="fa-solid fa-arrow-trend-down"></i> -2 min (Óptimo)</span>
+          </div>
         </div>
+      </div>
 
+      <div class="chart-container full-width">
+        <div class="chart-header">
+          <h3>Tendencia de Asistencias</h3>
+        </div>
+        <div class="chart-wrapper">
+          <div id="tendenciaChart" class="chart-loading">
+            Cargando gráfica...
+          </div>
+        </div>
+      </div>
+
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3>Métodos de Registro de Sesiones</h3>
+          </div>
+          <div class="chart-wrapper">
+            <div id="metodosChart" style="width: 100%; height: 350px;"></div>
+          </div>
+        </div>
     </main>
 
-    <script>
-    </script>
-</body>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="{{ url_for('static', filename='js/admin_charts.js') }}"></script>
+  </body>
 </html>
