@@ -38,22 +38,47 @@
       <p>Bienvenido, <strong>{{ session.id }}</strong></p>
     </div>
 
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <h3>Pacientes en Clínica (Hoy)</h3>
-        <div class="number">{{ total_pacientes_hoy | default(0) }}</div>
-      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon"><i class="fa-solid fa-user-check"></i></div>
+          <div class="kpi-info">
+            <h4>Efectividad Promedio</h4>
+            <p class="value">{{ kpi.get("efectividad_promedio", 0) }}%</p>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon"><i class="fa-solid fa-user-check"></i></div>
+          <div class="kpi-info">
+            <h4>Tasa de aderencia</h4>
+            <p class="value">{{ kpi.get("tasa_aderencia", 0) }}%</p>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon"><i class="fa-solid fa-user-check"></i></div>
+          <div class="kpi-info">
+            <h4>Paciente Activos con Sesion</h4>
+            <p class="value">{{ kpi.get("pacientes_activos", 0) }}</p>
+          </div>
+        </div>
 
-      <div class="kpi-card success">
-        <h3>Rutas GPS Activas</h3>
-        <div class="number">{{ rutas_activas | default(0) }}</div>
-      </div>
+        <div class="kpi-card" style="border-left-color: var(--accent-teal);">
+          <div class="kpi-icon" style="color: var(--accent-teal);"><i class="fa-solid fa-heart-pulse"></i></div>
+          <div class="kpi-info">
+            <h4>Sesiones de Hoy</h4>
+            <p class="value">{{ kpi.get("sesiones_hoy", 0) }} sesiones</p>
+            <span class="trend"><i class="fa-solid fa-arrow-trend-up"></i> Alta mejora clínica</span>
+          </div>
+        </div>
 
-      <div class="kpi-card warning">
-        <h3>Alertas IoT (Batería/Señal)</h3>
-        <div class="number">{{ alertas_iot | default(0) }}</div>
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-icon" style="color: var(--warning);"><i class="fa-solid fa-clock"></i></div>
+          <div class="kpi-info">
+            <h4>Tiempo Promedio Sesión</h4>
+            <p class="value">{{ kpi.get("tiempo_promedio_sesion", 0)}} min</p>
+            <span class="trend negative"><i class="fa-solid fa-arrow-trend-down"></i> -2 min (Óptimo)</span>
+          </div>
+        </div>
       </div>
-    </div>
 
     <div class="panel-grid">
       <div class="panel">

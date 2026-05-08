@@ -14,7 +14,7 @@ ultima_ubicacion = {'lat': None, 'lon': None, 'device': None}
 
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/gps', methods=['GET', 'POST'])
 def gps_osmand():
     global ultima_ubicacion
 
