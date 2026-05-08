@@ -92,10 +92,10 @@
           </td>
 
           <td class="action-btns">
-            <a href="/sesion/editar/{{ s.id_sesion }}" class="btn btn-edit">Editar</a>
-            <form action="/sesion/eliminar/{{ s.id_sesion }}" method="POST"
-              onsubmit="return confirm('¿Seguro que deseas eliminar la sesión {{ s.id_sesion }}?');">
-              <button type="submit" class="btn btn-delete">Eliminar</button>
+             <a href="{{ url_for('admin_editar_sesion', id_sesion=s.id_sesion) }}" class="btn btn-edit">Editar</a>
+    <form action="{{ url_for('admin_eliminar_sesion', id_sesion=s.id_sesion) }}" method="POST"
+        onsubmit="return confirm('¿Seguro que deseas eliminar la sesión {{ s.id_sesion }}?');">
+        <button type="submit" class="btn btn-delete">Eliminar</button>
             </form>
           </td>
         </tr>

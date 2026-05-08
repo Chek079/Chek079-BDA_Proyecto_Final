@@ -21,18 +21,12 @@
       <p style="font-size: 12px; color: var(--text-light); margin-top: 5px;">Portal Médico</p>
     </div>
     <ul class="nav-links">
-      <li><a href="{{url_for('clinica_dashboard')}}"><i class="fa-solid fa-calendar-day"></i> Mi Agenda
-          Hoy</a></li>
+      <li><a href="{{url_for('clinica_dashboard')}}"><i class="fa-solid fa-calendar-day"></i> Mi Agenda Hoy</a></li>
       <li><a href="{{url_for('clinica_obtenerPacientes')}}"><i class="fa-solid fa-users"></i> Mis Pacientes</a></li>
-      <li><a href="{{url_for('clinica_obtenerSesiones')}}"><i class="fa-solid fa-file-medical"></i> Historial
-          Sesiones</a></li>
-      <li><a href="{{url_for('clinica_expedienteSesion')}}"><i class="fa-solid fa-file-medical"></i> Sesión Activa</a>
-      </li>
-      <li><a href="{{url_for('clinica_sesionesDomicilio')}}" class="active"><i
-            class="fa-solid fa-house-chimney-user"></i> Terapias
-          Domicilio</a></li>
-      <li style="margin-top: auto;"><a href="{{url_for('principal')}}"><i
-            class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
+      <li><a href="{{url_for('clinica_obtenerSesiones')}}"><i class="fa-solid fa-file-medical"></i> Historial Sesiones</a></li>
+      <li><a href="{{url_for('clinica_expedienteSesion')}}"><i class="fa-solid fa-file-medical"></i> Sesión Activa</a></li>
+      <li><a href="{{url_for('clinica_sesionesDomicilio')}}" class="active"><i class="fa-solid fa-house-chimney-user"></i> Terapias Domicilio</a></li>
+      <li style="margin-top: auto;"><a href="{{url_for('logout')}}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
     </ul>
   </nav>
   <!-- Fin de sidebar-->
@@ -44,9 +38,11 @@
         <h2>Logística de Terapias a Domicilio</h2>
         <p>Gestiona tus rutas y tiempos de traslado para atenciones fuera de la clínica.</p>
       </div>
-      <a href="{{url_for('clinica_registrarSesion')}}"> <button class="btn-new">
-        <i class="fa-solid fa-plus"></i> Programar Visita
-        </button></a>
+      <a href="{{url_for('clinica_registrarSesion')}}">
+        <button class="btn-new">
+          <i class="fa-solid fa-plus"></i> Programar Visita
+        </button>
+      </a>
     </div>
 
     <div class="kpi-row">
@@ -81,8 +77,9 @@
     </div>
 
     <div class="logistics-grid">
-      <div class="routes-list">
 
+      <!-- LISTA DE RUTAS -->
+      <div class="routes-list">
         {% for visita in visitas_domicilio %}
         <div class="route-card {% if visita.estado == 'En Camino' %}active{% endif %}">
           <div class="route-header">
@@ -101,14 +98,16 @@
             </div>
           </div>
           <div class="route-actions">
-            <button class="btn-route"><i class="fa-solid fa-map"></i> Ver Ruta</button>
+            <button class="btn-route" onclick="verRuta({{ visita.lat | default(25.6866) }}, {{ visita.lon | default(-100.3161) }})">
+              <i class="fa-solid fa-map"></i> Ver Ruta
+            </button>
             <a href="/sesion/iniciar/{{ visita.id_paciente }}" class="btn-start-session">
               <i class="fa-solid fa-notes-medical"></i> Iniciar Sesión
             </a>
           </div>
         </div>
         {% else %}
-
+        <!-- Datos de ejemplo -->
         <div class="route-card active">
           <div class="route-header">
             <span class="route-time"><i class="fa-regular fa-clock"></i> 10:00 AM</span>
@@ -122,7 +121,9 @@
             </div>
           </div>
           <div class="route-actions">
-            <button class="btn-route"><i class="fa-solid fa-map"></i> Ver Ruta</button>
+            <button class="btn-route" onclick="verRuta(25.6574, -100.3665)">
+              <i class="fa-solid fa-map"></i> Ver Ruta
+            </button>
             <a href="#" class="btn-start-session"><i class="fa-solid fa-notes-medical"></i> Iniciar Sesión</a>
           </div>
         </div>
@@ -140,7 +141,9 @@
             </div>
           </div>
           <div class="route-actions">
-            <button class="btn-route"><i class="fa-solid fa-map"></i> Ver Ruta</button>
+            <button class="btn-route" onclick="verRuta(25.6714, -100.3090)">
+              <i class="fa-solid fa-map"></i> Ver Ruta
+            </button>
             <a href="#" class="btn-start-session" style="background: #A0AEC0; cursor: not-allowed;"
               onclick="event.preventDefault()">Esperando...</a>
           </div>
@@ -148,16 +151,28 @@
         {% endfor %}
       </div>
 
+      <!-- MAPA Y DETALLES -->
       <div class="map-container">
         <div class="map-header">
-          <h3>Detalle de Ruta: Roberto Gómez</h3>
+          <h3><i class="fa-solid fa-location-crosshairs" style="color:#2563eb;"></i> Ubicación en Tiempo Real</h3>
+          <span id="gps-badge" style="background:#f1f5f9; color:#64748b; padding:4px 12px; border-radius:20px; font-size:12px;">
+            <i class="fa-solid fa-satellite-dish"></i> Sin señal GPS
+          </span>
         </div>
 
-        <div class="map-placeholder">
-          <i class="fa-solid fa-map-location-dot"></i>
-          <h4 style="margin: 0; color: var(--text-dark);">Mapa del Trayecto</h4>
-          <p style="font-size: 13px; max-width: 250px;">Aquí se integrará el iframe de Google Maps o Mapbox con la ruta
-            trazada.</p>
+        <!-- MAPA -->
+        <div id="mapa-container" style="width:100%; height:350px; border-radius:8px; overflow:hidden; background:#f1f5f9; position:relative;">
+          <iframe id="mapa-iframe"
+            width="100%"
+            height="350"
+            style="border:0; border-radius:8px;"
+            loading="lazy"
+            src="https://maps.google.com/maps?q=25.6866,-100.3161&z=14&output=embed">
+          </iframe>
+          <!-- Indicador de carga -->
+          <div id="mapa-loading" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:12px 20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+            <i class="fa-solid fa-spinner fa-spin"></i> Actualizando mapa...
+          </div>
         </div>
 
         <div class="logistics-details">
@@ -165,22 +180,21 @@
             <i class="fa-solid fa-phone"></i>
             <div>
               <strong>Contacto del Paciente</strong>
-              <span>+52 81 1234 5678 (Confirmó asistencia)</span>
+              <span id="gps-coords">Esperando señal GPS de TracerClient...</span>
             </div>
           </div>
           <div class="logistics-item">
             <i class="fa-solid fa-circle-exclamation" style="color: var(--status-yellow);"></i>
             <div>
-              <strong>Instrucciones de Acceso</strong>
-              <span>Es una privada con caseta. Presentar identificación y decir que va a la casa 42. Cuidado con el
-                perro en el patio.</span>
+              <strong>Última Actualización GPS</strong>
+              <span id="gps-tiempo">—</span>
             </div>
           </div>
           <div class="logistics-item">
-            <i class="fa-solid fa-briefcase-medical"></i>
+            <i class="fa-solid fa-route"></i>
             <div>
-              <strong>Equipo Requerido</strong>
-              <span>Llevar máquina TENS portátil, ligas de resistencia (Baja/Media) y camilla plegable.</span>
+              <strong>Dispositivo</strong>
+              <span id="gps-device">—</span>
             </div>
           </div>
         </div>
@@ -188,6 +202,45 @@
     </div>
 
   </main>
-</body>
 
+  <script>
+    // Ver ruta de un paciente en el mapa
+    function verRuta(lat, lon) {
+      const url = `https://maps.google.com/maps?q=${lat},${lon}&z=15&output=embed`;
+      document.getElementById('mapa-iframe').src = url;
+    }
+
+    // Actualizar mapa con ubicación GPS en tiempo real de TracerClient
+    function actualizarGPS() {
+      fetch('/gps/ultima')
+        .then(r => r.json())
+        .then(data => {
+          if (data.lat && data.lon) {
+            // Actualizar mapa
+            const url = `https://maps.google.com/maps?q=${data.lat},${data.lon}&z=16&output=embed`;
+            document.getElementById('mapa-iframe').src = url;
+
+            // Actualizar badge
+            document.getElementById('gps-badge').innerHTML =
+              `<i class="fa-solid fa-satellite-dish" style="color:#16a34a;"></i> GPS Activo`;
+            document.getElementById('gps-badge').style.background = '#dcfce7';
+            document.getElementById('gps-badge').style.color = '#16a34a';
+
+            // Actualizar info
+            document.getElementById('gps-coords').textContent =
+              `Lat: ${data.lat.toFixed(6)}, Lon: ${data.lon.toFixed(6)}`;
+            document.getElementById('gps-tiempo').textContent =
+              new Date().toLocaleTimeString('es-MX');
+            document.getElementById('gps-device').textContent =
+              data.device || 'TracerClient';
+          }
+        })
+        .catch(() => console.log('Sin datos GPS todavía'));
+    }
+
+    actualizarGPS();
+    setInterval(actualizarGPS, 10000);
+  </script>
+
+</body>
 </html>

@@ -5,7 +5,87 @@ from functools import wraps
  
 app = Flask(__name__)
 app.secret_key = '1234'
- 
+
+
+
+# Variable global para guardar última ubicación GPS
+ultima_ubicacion = {'lat': None, 'lon': None, 'device': None}
+
+
+
+
+@app.route('/', methods=['GET', 'POST'])
+def gps_osmand():
+    global ultima_ubicacion
+
+    json_data = request.get_json(silent=True)
+    if json_data:
+        coords    = json_data.get('location', {}).get('coords', {})
+        lat       = coords.get('latitude')
+        lon       = coords.get('longitude')
+        device_id = json_data.get('device_id', '')
+        speed     = coords.get('speed', 0)
+
+        print(f"GPS: lat={lat}, lon={lon}, device={device_id}")
+
+        if lat and lon:
+            ultima_ubicacion = {'lat': lat, 'lon': lon, 'device': device_id}
+            try:
+                query(
+                    """INSERT INTO gps_registros
+                       (id_paciente, id_terapeuta, latitud, longitud, fecha, hora, id_estado)
+                       VALUES (1, 1, %s, %s, CURRENT_DATE, CURRENT_TIME, 1)""",
+                    (lat, lon), commit=True
+                )
+            except Exception as e:
+                print("Error GPS:", e)
+
+    return 'OK', 200
+
+
+@app.route('/gps/recibir', methods=['GET', 'POST'])
+def gps_recibir():
+    global ultima_ubicacion
+    print("GPS recibido:", request.args)
+    lat    = request.args.get('lat', type=float)
+    lon    = request.args.get('lon', type=float)
+    device = request.args.get('id', '')
+    if lat and lon:
+        ultima_ubicacion = {'lat': lat, 'lon': lon, 'device': device}
+        try:
+            query(
+                """INSERT INTO gps_registros
+                   (id_paciente, id_terapeuta, latitud, longitud, fecha, hora, id_estado)
+                   VALUES (1, 1, %s, %s, CURRENT_DATE, CURRENT_TIME, 1)""",
+                (lat, lon), commit=True
+            )
+        except Exception as e:
+            print("Error GPS:", e)
+    return 'OK', 200
+
+
+@app.route('/gps/ultima')
+def gps_ultima():
+    return jsonify(ultima_ubicacion)
+
+
+
+
+
+
+# Variable global para guardar datos del beacon en memoria
+beacon_data = {'total': 0, 'dispositivos': []}
+
+@app.route('/beacon/datos', methods=['POST'])
+def beacon_datos():
+    global beacon_data
+    beacon_data = request.get_json()
+    return jsonify({'ok': True})
+
+@app.route('/beacon/estado')
+def beacon_estado():
+    return jsonify(beacon_data)
+
 
 # === METODOS DE LOGIN / LOGOUT ========================
 def get_css():
@@ -313,6 +393,7 @@ def admin_eliminar_sesion(id_sesion):
         query("CALL sp_eliminar_sesion(%s)", (id_sesion,), commit=True)
         flash('Sesión eliminada.', 'success')
     except Exception as e:
+        print("ERROR eliminar sesion:", e)
         flash(f'No se puede eliminar: {e}', 'error')
     return redirect(url_for('admin_obtenerSesiones'))
 
@@ -747,6 +828,51 @@ def publica_sesiones():
 
 
 
+@app.route('/paciente/perfil')
+@login_required
+@role_required('familiar')
+def publica_paciente():
+    id_paciente = session.get('ref_id')
+    try:
+        paciente = query(
+            "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
+            (id_paciente,), fetchone=True
+        )
+        proxima_sesion = query(
+            """SELECT s.fecha, s.hora_inicio, ts.nombre AS tipo_sesion
+               FROM paciente_sesion ps
+               JOIN sesiones s ON s.id_sesion = ps.id_sesion
+               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+               WHERE ps.id_paciente = %s AND s.fecha >= CURRENT_DATE
+               ORDER BY s.fecha, s.hora_inicio LIMIT 1""",
+            (id_paciente,), fetchone=True
+        )
+        ultima_sesion = query(
+            """SELECT s.fecha, s.hora_inicio, ts.nombre AS tipo_sesion
+               FROM paciente_sesion ps
+               JOIN sesiones s ON s.id_sesion = ps.id_sesion
+               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+               WHERE ps.id_paciente = %s AND s.fecha < CURRENT_DATE
+               ORDER BY s.fecha DESC LIMIT 1""",
+            (id_paciente,), fetchone=True
+        )
+        medicamentos = query(
+            "SELECT medicamento_actual FROM paciente_medicamento WHERE id_paciente = %s",
+            (id_paciente,), fetchall=True
+        )
+    except Exception:
+        paciente = proxima_sesion = ultima_sesion = None
+        medicamentos = []
+    return render_template('publica_paciente.html',
+                           paciente=paciente,
+                           proxima_sesion=proxima_sesion,
+                           ultima_sesion=ultima_sesion,
+                           medicamentos=medicamentos or [],
+                           css_file='css/publica_base.css')
+
+
+
+
 @app.route('/paciente/info')
 @login_required
 def expedientePaciente():
@@ -823,15 +949,11 @@ def back_paciente():
 
 
 @app.route('/nfc')
-@login_required
-@role_required('admin', 'terapeuta')
 def nfc_scanner():
     return render_template('nfc_scanner.html')
 
 
 @app.route('/nfc/registrar', methods=['POST'])
-@login_required
-@role_required('admin', 'terapeuta')
 def nfc_registrar():
     from datetime import datetime
     data = request.get_json()
