@@ -294,7 +294,11 @@ def admin_registrarPacientes():
             return redirect(url_for('admin_obtenerPacientes'))
         except Exception as e:
             flash(f'Error al registrar paciente: {e}', 'error')
-    return render_template('admin_registrarPaciente.html')
+    try:
+        terapeutas = query("SELECT id_terapeuta, nombre || ' ' || apellido_paterno AS nombre_completo FROM terapeutas ORDER BY nombre", fetchall=True)
+    except Exception:
+        especialidades = []
+    return render_template('admin_registrarPaciente.html', terapeutas = terapeutas or [])
 
 @app.route('/admin/paciente/eliminar/<int:id_paciente>', methods=['POST'])
 @login_required
@@ -324,10 +328,10 @@ def admin_registrarTerapeutas():
     if request.method == 'POST':
         f = request.form
         try:
-            query( "CALL sp_insertar_terapeuta(%s,%s,%s,%s::INTEGER,%s,%s,%s)",
+            query( "CALL sp_insertar_terapeuta(%s,%s,%s,%s::INTEGER,%s,%s,%s,%s::INTEGER)",
                 (f['nombre'], f['apellido_paterno'], f['apellido_materno'],
                  int(f['especialidad']), f.get('telefono'),
-                 f.get('correo'), f.get('observaciones')), commit=True
+                 f.get('correo'), f.get('observaciones'), int(f['sexo'])), commit=True
             )
             flash('Terapeuta registrado.', 'success')
             return redirect(url_for('admin_obtenerTerapeutas'))
@@ -488,7 +492,7 @@ def admin_editar_terapeuta(id_terapeuta):
             id_especialidad = int(id_especialidad)
 
             query(
-                "CALL sp_actualizar_terapeuta(%s,%s,%s,%s,%s,%s,%s,%s)",
+                "CALL sp_actualizar_terapeuta(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
                     id_terapeuta,
                     f.get('nombre'),
@@ -497,7 +501,8 @@ def admin_editar_terapeuta(id_terapeuta):
                     id_especialidad,
                     f.get('telefono'),
                     f.get('correo'),
-                    f.get('observaciones')
+                    f.get('observaciones'),
+                    int(f['sexo'])
                 ),
                 commit=True
             )

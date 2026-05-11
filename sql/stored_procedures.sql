@@ -155,12 +155,13 @@ CREATE OR REPLACE PROCEDURE sp_insertar_terapeuta(
   p_id_especialidad INTEGER,
   p_telefono        VARCHAR,
   p_correo          VARCHAR,
-  p_observaciones   TEXT
+  p_observaciones   TEXT,
+  p_id_sexo INTEGER
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-  INSERT INTO terapeutas ( nombre, apellido_paterno, apellido_materno, id_especialidad, telefono, correo, observaciones) VALUES (
-    p_nombre, p_ap_paterno, p_ap_materno, p_id_especialidad, p_telefono, p_correo, p_observaciones);
+  INSERT INTO terapeutas ( nombre, apellido_paterno, apellido_materno, id_especialidad, telefono, correo, observaciones, id_sexo) VALUES (
+    p_nombre, p_ap_paterno, p_ap_materno, p_id_especialidad, p_telefono, p_correo, p_observaciones, p_id_sexo);
 END;
 $$;
 
@@ -174,7 +175,8 @@ CREATE OR REPLACE PROCEDURE sp_actualizar_terapeuta(
   p_id_especialidad INTEGER,
   p_telefono        VARCHAR,
   p_correo          VARCHAR,
-  p_observaciones   TEXT
+  p_observaciones   TEXT,
+  p_id_sexo INTEGER
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -185,7 +187,8 @@ BEGIN
   id_especialidad  = p_id_especialidad,
   telefono         = p_telefono,
   correo           = p_correo,
-  observaciones    = p_observaciones
+  observaciones    = p_observaciones,
+  id_sexo          = p_id_sexo
   WHERE id_terapeuta = p_id_terapeuta;
 
   IF NOT FOUND THEN

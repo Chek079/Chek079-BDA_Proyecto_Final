@@ -54,12 +54,14 @@ t.nombre,
 t.apellido_paterno,
 t.apellido_materno,
 t.nombre || ' ' || t.apellido_paterno AS nombre_completo,
+cs.nombre                                                   AS sexo,
 ce.nombre AS especialidad,
 t.telefono,
 t.correo,
 t.observaciones
-FROM  terapeutas t
-JOIN  cat_especialidades ce ON ce.id_especialidad = t.id_especialidad;
+FROM terapeutas t
+JOIN cat_sexo cs ON cs.id_sexo = t.id_sexo
+JOIN cat_especialidades ce ON ce.id_especialidad = t.id_especialidad;
 
 SELECT
 t.id_terapeuta,
