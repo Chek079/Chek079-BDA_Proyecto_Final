@@ -64,12 +64,9 @@
             <label>Sexo</label>
             <select name="sexo" class="form-control" required>
               <option value="">Seleccione su sexo...</option>
-              {% for s in sexos %}
-                <option value="{{ s.id_sexo }}"
-                {% if paciente and paciente.id_sexo == s.id_sexo %}selected{% endif %}>
-                {{ s.nombre }}
+              <option value="1" {% if paciente.sexo == "MASCULINO" %}selected{% endif %}>Masculino</option>
+              <option value="2" {% if paciente.sexo == "FEMENINO" %}selected{% endif %}>Femenino</option>
                 </option>
-              {% endfor %}
             </select>
           </div>
           <div class="form-group">

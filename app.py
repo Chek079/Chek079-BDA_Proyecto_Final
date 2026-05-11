@@ -428,19 +428,7 @@ def admin_obtenerBeacons():
 @role_required('admin')
 def admin_reportes():
     try:
-        kpi = {
-            "pacientes_activos": query("""SELECT COUNT(DISTINCT id_paciente) AS pacientes_activos FROM paciente_sesion;""", fetchone=True)["pacientes_activos"],
-
-            "sesiones_hoy": query("""SELECT COUNT(*) AS sesiones_hoy FROM sesiones WHERE fecha = CURRENT_DATE;""", fetchone=True)["sesiones_hoy"],
-
-            "tasa_aderencia": query("""SELECT ROUND((COUNT(CASE WHEN asistencia = TRUE THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2) AS tasa_asistencia FROM sesiones;""", fetchone=True)["tasa_asistencia"],
-
-            "efectividad_promedio": query("""SELECT ROUND(AVG((nivel_movilidad + resistencia + (10 - nivel_dolor)) / 3.0), 2) AS efectividad_promedio FROM evaluaciones_progreso;""", fetchone=True)["efectividad_promedio"],
-
-            "sesiones_finalizadas": query("""SELECT COUNT(*) AS sesiones_finalizadas FROM sesiones WHERE estado_sesion = 'FINALIZADA';""", fetchone=True)["sesiones_finalizadas"],
-
-            "tiempo_promedio_sesion": query("""SELECT ROUND( AVG( EXTRACT(EPOCH FROM (hora_fin_real - hora_inicio_real)) / 60), 2) AS tiempo_promedio_minutos FROM sesiones WHERE hora_inicio_real IS NOT NULL AND hora_fin_real IS NOT NULL;""", fetchone=True)["tiempo_promedio_minutos"]
-            }
+        pass
     except Exception:
         kpi = {}
     return render_template('admin_reportes.html', kpi=kpi)
@@ -473,14 +461,13 @@ def admin_editar_paciente(id_paciente):
             "SELECT * FROM vw_pacientes_completo WHERE id_paciente = %s",
             (id_paciente,), fetchone=True
         )
-        sexos = query("SELECT * FROM cat_sexo WHERE activo = TRUE", fetchall=True)
         terapeutas = query(
             "SELECT * FROM vw_terapeutas_completo", fetchall=True)
     except Exception:
-        paciente, terapeutas, sexos = None, []
+        paciente, terapeutas = None, []
 
     return render_template('admin_actualizarPaciente.html', 
-                           paciente=paciente, terapeutas=terapeutas or [],sexos=sexos or [])
+                           paciente=paciente, terapeutas=terapeutas or [])
 
 
 
