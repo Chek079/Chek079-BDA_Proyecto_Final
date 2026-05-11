@@ -6,13 +6,8 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = '1234'
 
-
-
 # Variable global para guardar última ubicación GPS
 ultima_ubicacion = {'lat': None, 'lon': None, 'device': None}
-
-
-
 
 @app.route('/gps', methods=['GET', 'POST'])
 def gps_osmand():
@@ -67,11 +62,6 @@ def gps_recibir():
 @app.route('/gps/ultima')
 def gps_ultima():
     return jsonify(ultima_ubicacion)
-
-
-
-
-
 
 # Variable global para guardar datos del beacon en memoria
 beacon_data = {'total': 0, 'dispositivos': []}
@@ -432,12 +422,10 @@ def admin_obtenerBeacons():
 @role_required('admin')
 def admin_reportes():
     try:
-        pass
+        kpi = {}
     except Exception:
         kpi = {}
     return render_template('admin_reportes.html', kpi=kpi)
-
-
 
 @app.route('/paciente/editar/<int:id_paciente>', methods=['GET', 'POST'])
 @login_required
@@ -571,26 +559,6 @@ def admin_editar_sesion(id_sesion):
                            metodos=metodos or [])
 
 
-@app.route('/api/kpi/tendencia-asistencias')
-@login_required
-@role_required('admin')
-def api_tendencia_asistencias():
-
-    dias = request.args.get('dias', default=30, type=int)
-
-    res = query("""
-        SELECT fecha_registro, total_asistencias,
-            total_cancelaciones
-        FROM vw_kpi_tendencia_asistencias
-        WHERE fecha >= CURRENT_DATE - (%s || ' days')::INTERVAL
-        ORDER BY fecha ASC
-    """, (dias,), fetchall=True)
-
-    return jsonify({
-        "fechas": [r['fecha_registro'] for r in res],
-        "asistencias": [r['total_asistencias'] for r in res],
-        "cancelaciones": [r['total_cancelaciones'] for r in res]
-    })
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1061,6 +1029,153 @@ def nfc_registrar():
 
     except Exception as e:
         return jsonify({'success': False, 'mensaje': f'Error: {e}'})
+
+# API
+@app.route('/api/kpi/tendencia-asistencias')
+@login_required
+@role_required('admin')
+def api_tendencia_asistencias():
+    dias = request.args.get('dias', default=30, type=int)
+
+    res = query("""
+        SELECT fecha_registro, total_asistencias,
+            total_cancelaciones
+        FROM vw_kpi_tendencia_asistencias
+        WHERE fecha >= CURRENT_DATE - (%s || ' days')::INTERVAL
+        ORDER BY fecha ASC
+    """, (dias,), fetchall=True)
+
+    return jsonify({
+        "fechas": [r['fecha_registro'] for r in res],
+        "asistencias": [r['total_asistencias'] for r in res],
+        "cancelaciones": [r['total_cancelaciones'] for r in res]
+    })
+
+@app.route('/api/kpi/estados_sesiones')
+@login_required
+@role_required('admin')
+def api_estados_sesiones():
+    res = query("""
+                SELECT estado_sesion, total
+                FROM vw_highcharts_estados_sesiones;
+                """, fetchall=True)
+
+    return jsonify({
+        "estado_sesion": [row["estado_sesion"] for row in res],
+        "total": [row["total"] for row in res]
+        })
+
+@app.route('/api/kpi/asistencia_pacientes')
+@login_required
+@role_required('admin')
+def api_asistencia_pacientes():
+    res = query("""
+        SELECT
+            paciente,
+            porcentaje_asistencia
+        FROM vw_reporte_asistencia;
+    """, fetchall=True)
+
+    return jsonify({
+        "paciente": [row["paciente"] for row in res],
+        "porcentaje_asistencia": [float(row["porcentaje_asistencia"]) for row in res]
+    })
+
+@app.route('/api/kpi/sesiones_terapeuta')
+@login_required
+@role_required('admin')
+def api_sesiones_terapeuta():
+    res = query("""
+        SELECT
+            terapeuta,
+            total_sesiones
+        FROM vw_highcharts_sesiones_terapeuta;
+    """, fetchall=True)
+
+    return jsonify({
+        "terapeuta": [row["terapeuta"] for row in res],
+        "total_sesiones": [row["total_sesiones"] for row in res]
+    })
+
+@app.route('/api/kpi/tipos_sesion')
+@login_required
+@role_required('admin')
+def api_tipos_sesion():
+
+    res = query("""
+        SELECT
+            nombre,
+            total
+        FROM vw_highcharts_tipos_sesion;
+    """, fetchall=True)
+
+    return jsonify({
+        "nombre": [row["nombre"] for row in res],
+        "total": [row["total"] for row in res]
+    })
+
+@app.route('/api/kpi/evolucion_dolor')
+@login_required
+@role_required('admin')
+def api_evolucion_dolor():
+
+    res = query("""
+        SELECT
+            fecha,
+            dolor_promedio
+        FROM vw_highcharts_evolucion_dolor;
+    """, fetchall=True)
+
+    return jsonify({
+        "fecha": [str(row["fecha"]) for row in res],
+        "dolor_promedio": [float(row["dolor_promedio"]) for row in res]
+    })
+
+@app.route('/api/kpi/evolucion_movilidad')
+@login_required
+@role_required('admin')
+def api_evolucion_movilidad():
+    res = query("""
+        SELECT
+            fecha,
+            movilidad_promedio
+        FROM vw_highcharts_evolucion_movilidad;
+    """, fetchall=True)
+
+    return jsonify({
+        "fecha": [str(row["fecha"]) for row in res],
+        "movilidad_promedio": [float(row["movilidad_promedio"]) for row in res]
+    })
+
+@app.route('/api/kpi/tendencia_sesiones')
+@login_required
+@role_required('admin')
+def api_tendencia_sesiones():
+    res = query("""
+        SELECT
+            fecha,
+            total
+        FROM vw_highcharts_tendencia_sesiones;
+    """, fetchall=True)
+
+    return jsonify({
+        "fecha": [str(row["fecha"]) for row in res],
+        "total": [row["total"] for row in res]
+    })
+
+@app.route('/api/kpi/tendencia_sexo')
+@login_required
+@role_required('admin')
+def api_tendencia_sexo():
+    res = query("""
+        SELECT nombre, total
+        FROM vw_highcharts_pacientes_sexo;
+    """, fetchall=True)
+
+    return jsonify({
+        "nombre": [str(row["nombre"]) for row in res],
+        "total": [row["total"] for row in res]
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)

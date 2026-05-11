@@ -28,38 +28,72 @@
       </ul>
     </nav>
     <main class="main-content">
-
-      <div class="header-actions">
-        <div>
-          <h2>Inteligencia y Analítica Clínica</h2>
-          <p>Métricas de efectividad, asistencia y desempeño predictivo.</p>
-        </div>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-export" onclick="window.print()">
-            <i class="fa-solid fa-file-pdf"></i> Exportar PDF
-          </button>
-        </div>
-      </div>
-
-      <div class="chart-container full-width">
-        <div class="chart-header">
-          <h3>Tendencia de Asistencias</h3>
-        </div>
-        <div class="chart-wrapper">
-          <div id="tendenciaChart" class="chart-loading">
-            Cargando gráfica...
-          </div>
-        </div>
-      </div>
-
+      <div class="charts-grid">
         <div class="chart-container">
           <div class="chart-header">
-            <h3>Métodos de Registro de Sesiones</h3>
+            <h3>Tendencia de Asistencias</h3>
           </div>
           <div class="chart-wrapper">
-            <div id="metodosChart" style="width: 100%; height: 350px;"></div>
+            <div id="tendenciaChart" class="chart-loading"> Cargando gráfica... </div>
           </div>
         </div>
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3>Estados de Sesiones</h3>
+          </div>
+          <div class="chart-wrapper">
+            <div id="estadoSesionesChart"></div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3>Asistencias por paciente</h3>
+          </div>
+          <div class="chart-wrapper">
+            <div id="asistenciaPacientes"></div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3>Tendencia por Sesion</h3>
+          </div>
+          <div class="chart-wrapper">
+            <div id="tendenciaSesiones"></div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3>Evolucion por Movilidad</h3>
+          </div>
+          <div class="chart-wrapper">
+            <div id="evolucionMovilidad"></div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3>Evolucion por Dolor</h3>
+          </div>
+          <div class="chart-wrapper">
+            <div id="evolucionDolor"></div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3>Tipos de Sesion</h3>
+          </div>
+          <div class="chart-wrapper">
+            <div id="tiposSesion"></div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3>Sesiones por Terapeuta</h3>
+          </div>
+          <div class="chart-wrapper">
+            <div id="sesionesTerapeuta"></div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script src="https://code.highcharts.com/highcharts.js"></script>

@@ -130,6 +130,7 @@ body {
 }
 
 .chart-container {
+  min-height: 450px;
   background: var(--white);
   padding: 20px;
   border-radius: 10px;
