@@ -37,14 +37,30 @@ p.telefono,
 p.correo,
 p.direccion,
 p.diagnostico_principal,
-p.antecedentes_medicos
-FROM  pacientes p
-JOIN  cat_sexo cs ON cs.id_sexo = p.id_sexo;
+p.antecedentes_medicos,
+t.id_terapeuta as terapeuta
+FROM pacientes p
+JOIN cat_sexo cs ON cs.id_sexo = p.id_sexo
+JOIN paciente_terapeuta pt ON  p.id_paciente = pt.id_paciente
+JOIN terapeutas t ON pt.id_terapeuta = t.id_terapeuta;
 
 
 -- ── vw_terapeutas_completo ────────────────────────────────────
 DROP VIEW IF EXISTS vw_terapeutas_completo;
 CREATE VIEW vw_terapeutas_completo AS
+SELECT
+t.id_terapeuta,
+t.nombre,
+t.apellido_paterno,
+t.apellido_materno,
+t.nombre || ' ' || t.apellido_paterno AS nombre_completo,
+ce.nombre AS especialidad,
+t.telefono,
+t.correo,
+t.observaciones
+FROM  terapeutas t
+JOIN  cat_especialidades ce ON ce.id_especialidad = t.id_especialidad;
+
 SELECT
 t.id_terapeuta,
 t.nombre,

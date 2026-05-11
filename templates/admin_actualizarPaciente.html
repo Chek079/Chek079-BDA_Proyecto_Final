@@ -90,14 +90,7 @@
             <select name="id_terapeuta" class="form-control" required>
               <option value="">Seleccione un terapeuta...</option>
               {% for t in terapeutas %}
-              <option value="{{ t.id_terapeuta }}">
-              {% if t.sexo == "MASCULINO" %}
-              DR.
-              {% else %}
-              DRA.
-              {% endif %}
-              {{ t.nombre }} {{ t.apellido_paterno }} {{ t.apellido_materno }}
-              </option>
+              <option value="{{ t.id_terapeuta }}" {% if t.id_terapeuta == paciente.terapeuta %}selected{% endif %} >{{t.nombre_completo}}</option>
               {% endfor %}
             </select>
           </div>
