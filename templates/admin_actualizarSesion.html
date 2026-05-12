@@ -1,123 +1,162 @@
 <!DOCTYPE html>
 <html lang="es">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Programar Sesión - Admin</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
-  <link rel="stylesheet" href="{{url_for('static',filename='css/admin_base.css')}}">
-  <link rel="stylesheet" href="{{url_for('static',filename='css/admin_formulario.css')}}">
-</head>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Sesión - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_formulario.css') }}">
+  </head>
 
-<body>
-  <!-- Inicio de SIDEBAR -->
-  <nav class="sidebar">
-    <div class="sidebar-header">
-      <h1> Rehab IoT <h1>
-    </div>
-    <ul class="nav-links">
-      <li><a href="{{url_for('admin_dashboard')}}"><i class="fa-solid fa-arrows-to-circle"></i>
-          Dashboard</a></li>
-      <li><a href="{{url_for('admin_obtenerPacientes')}}"> <i class="fa-solid fa-clipboard-user"></i>Pacientes</a></li>
-      <li><a href="{{url_for('admin_obtenerTerapeutas')}}"> <i class="fa-solid fa-user-group"></i> Terapeutas</a></li>
-      <li><a href="{{url_for('admin_obtenerSesiones')}}" class="active"> <i class="fa-solid fa-house-chimney-user"></i>
-          Sesiones </a>
-      </li>
-      <li><a href="{{url_for('admin_obtenerBeacons')}}"><i class="fa-solid fa-cubes-stacked"></i> Zonas (Beacons)</a>
-      </li>
-      <li><a href="{{url_for('admin_reportes')}}"> <i class="fa-solid fa-book"></i> Reportes </a></li>
-      <li><a href="{{url_for('logout')}}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
-    </ul>
-  </nav>
-  <!-- Fin de SIDEBAR -->
-
-  <main class="main-content">
-    <div class="form-card">
-      <div class="form-header">
-        <h2>Asignación Central de Sesiones</h2>
-        <p style="color: var(--text-light); margin: 5px 0 0 0;">Asigna citas vinculando a un paciente con un terapeuta y
-          ubicación.</p>
+  <body>
+    <!-- Inicio de SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h1>Rehab IoT</h1>
       </div>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('admin_dashboard') }}"><i class="fa-solid fa-arrows-to-circle"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('admin_obtenerPacientes') }}"><i class="fa-solid fa-clipboard-user"></i> Pacientes</a></li>
+        <li><a href="{{ url_for('admin_obtenerTerapeutas') }}"><i class="fa-solid fa-user-group"></i> Terapeutas</a></li>
+        <li><a href="{{ url_for('admin_obtenerSesiones') }}" class="active"><i class="fa-solid fa-house-chimney-user"></i> Sesiones</a></li>
+        <li><a href="{{ url_for('admin_obtenerBeacons') }}"><i class="fa-solid fa-cubes-stacked"></i> Zonas (Beacons)</a></li>
+        <li><a href="{{ url_for('admin_reportes') }}"><i class="fa-solid fa-book"></i> Reportes</a></li>
+        <li><a href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
+      </ul>
+    </nav>
+    <!-- Fin de SIDEBAR -->
 
-      <form action="{{ url_for('admin_registrarSesion') }}" method="POST">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Seleccionar Paciente</label>
-            <select name="id_paciente" class="form-control" required>
-    <option value="">Buscar paciente...</option>
-    {% for p in pacientes %}
-    <option value="{{ p.id_paciente }}">{{ p.nombre_completo }}</option>
-    {% endfor %}
-</select>
-          </div>
-
-          <div class="form-group">
-            <label>Terapeuta Encargado</label>
-            <select name="id_terapeuta" class="form-control" required>
-    <option value="">Asignar terapeuta...</option>
-    {% for t in terapeutas %}
-    <option value="{{ t.id_terapeuta }}">{{ t.nombre_completo }}</option>
-    {% endfor %}
-</select>
-          </div>
-
-          <div class="form-group">
-            <label>Fecha de la Sesión</label>
-            <input type="date" name="fecha" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>Modalidad</label>
-            <select name="modalidad" class="form-control" required>
-    <option value="" disabled selected>Selecciona modalidad...</option>
-    <option value="1">Individual</option>
-    <option value="2">Grupal</option>
-    <option value="3">Respiratoria</option>
-</select>
-          </div>
-
-
-	<div class="form-group">
-            <label>Lugar</label>
-            <select name="modalidad" class="form-control" required>
-    <option value="" disabled selected>Donde sera la sesion</option>
-    <option value="1">Clinica(Presencial)</option>
-    <option value="2">A domicilio</option>
-    
-</select>
-          </div>
-
-
-
-          <div class="form-group">
-            <label>Hora de inicio</label>
-            <input type="time" id="hora_inicio" name="hora_inicio" class="form-control" requires>
-          </div>
-          <div class="form-group">
-            <label>Hora de fin</label>
-            <input type="time" id="hora_fin" name="hora_fin" class="form-control" required>
-          </div>
-          <div class="form-group">
-           
-          <div class="form-group">
-    <label for="metodo_registro">Método de Agendamiento</label>
-    <select id="metodo_registro" name="metodo_registro" class="form-control" required>
-        <option value="" disabled selected>¿Cómo agendó la cita?</option>
-        <option value="1">Presencial</option>
-        <option value="2">Llamada</option>
-    </select>
-</div>
+    <main class="main-content">
+      <div class="form-card">
+        <div class="form-header">
+          <h2>Editar Sesión</h2>
+          <p style="color: var(--text-light); margin: 5px 0 0 0;">
+          Modifica los datos de la sesión #{{ sesion.id_sesion }}.
+          </p>
         </div>
-        <div class="form-group full-width">
-          <label>Comentarios Administrativos</label>
-          <textarea name="observaciones" class="form-control" rows="3"
-            placeholder="Ej. El paciente debe liquidar saldo pendiente antes de iniciar la sesión..."></textarea>
+
+        <!-- Mensajes flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" style="padding: 10px 15px; margin-bottom: 15px;
+          border-radius: 6px;
+          background-color: {{ '#d4edda' if category == 'success' else '#f8d7da' }};
+          color: {{ '#155724' if category == 'success' else '#721c24' }};
+          border: 1px solid {{ '#c3e6cb' if category == 'success' else '#f5c6cb' }};">
+          {{ message }}
         </div>
-        <button type="submit" class="btn-submit"><i class="fa-solid fa-calendar-check"></i> Registrar Cita en el
-          Sistema</button>
-      </form>
-    </div>
-  </main>
-</body>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('admin_editar_sesion', id_sesion=sesion.id_sesion) }}" method="POST">
+
+          <div class="form-grid">
+
+            <!-- Fecha -->
+            <div class="form-group">
+              <label for="fecha">Fecha de la Sesión</label>
+              <input
+              type="date"
+              id="fecha"
+              name="fecha"
+              class="form-control"
+              value="{{ sesion.fecha | string | truncate(10, killwords=True, end='') }}"
+              required>
+            </div>
+
+            <!-- Modalidad -->
+            <div class="form-group">
+              <label for="modalidad">Modalidad</label>
+              <select id="modalidad" name="modalidad" class="form-control" required>
+                <option value="" disabled>Selecciona modalidad...</option>
+                {% for tipo in tipos %}
+                <option value="{{ tipo.id_tipo_sesion }}"
+                {% if sesion.id_tipo_sesion == tipo.id_tipo_sesion %}selected{% endif %}>
+                {{ tipo.nombre }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Hora inicio -->
+            <div class="form-group">
+              <label for="hora_inicio">Hora de Inicio</label>
+              <input
+              type="time"
+              id="hora_inicio"
+              name="hora_inicio"
+              class="form-control"
+              value="{{ sesion.hora_inicio | string | truncate(5, killwords=True, end='') }}"
+              required>
+            </div>
+
+            <!-- Hora fin -->
+            <div class="form-group">
+              <label for="hora_fin">Hora de Fin</label>
+              <input
+              type="time"
+              id="hora_fin"
+              name="hora_fin"
+              class="form-control"
+              value="{{ sesion.hora_fin | string | truncate(5, killwords=True, end='') }}"
+              required>
+            </div>
+
+            <!-- Asistencia -->
+            <div class="form-group">
+              <label for="asistencia">Asistencia</label>
+              <select id="asistencia" name="asistencia" class="form-control" required>
+                <option value="1" {% if sesion.asistencia %}selected{% endif %}>Asistió</option>
+                <option value="0" {% if not sesion.asistencia %}selected{% endif %}>No asistió</option>
+              </select>
+            </div>
+
+            <!-- Método de registro -->
+            <div class="form-group">
+              <label for="metodo_registro">Método de Agendamiento</label>
+              <select id="metodo_registro" name="metodo_registro" class="form-control" required>
+                <option value="" disabled>¿Cómo agendó la cita?</option>
+                {% for m in metodos %}
+                <option value="{{ m.id_metodo_registro }}"
+                {% if sesion.id_metodo_registro == m.id_metodo_registro %}selected{% endif %}>
+                {{ m.nombre }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+          </div>
+
+          <!-- Observaciones (ancho completo) -->
+          <div class="form-group full-width">
+            <label for="observaciones">Comentarios Administrativos</label>
+            <textarea
+              id="observaciones"
+              name="observaciones"
+              class="form-control"
+              rows="3"
+              placeholder="Ej. El paciente debe liquidar saldo pendiente antes de iniciar la sesión...">{{ sesion.observaciones or '' }}</textarea>
+          </div>
+
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button type="submit" class="btn-submit">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+            </button>
+            <a href="{{ url_for('admin_obtenerSesiones') }}"
+              style="display:inline-flex; align-items:center; gap:6px; padding: 10px 20px;
+              border-radius: 6px; border: 1px solid #ccc; text-decoration:none;
+              color: var(--text-light); background: #fff;">
+              <i class="fa-solid fa-xmark"></i> Cancelar
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </main>
+  </body>
 
 </html>
