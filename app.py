@@ -857,14 +857,10 @@ def clinica_finalizarSesionReal(id_sesion):
 @login_required
 @role_required('terapeuta')
 def clinica_expedientePaciente():
-
     id_paciente = request.args.get('id_paciente', type=int)
-
     if not id_paciente:
         return redirect(url_for('clinica_obtenerPacientes'))
-
     try:
-
         # ============================================================
         # INFORMACIÓN GENERAL DEL PACIENTE
         # ============================================================
@@ -878,10 +874,7 @@ def clinica_expedientePaciente():
         # VALIDAR SI EXISTE
         # ============================================================
         if not paciente:
-            return render_template(
-                'clinica_expediente_paciente.html',
-                paciente=None
-            )
+            return render_template( 'clinica_expediente_paciente.html', paciente=None)
 
         # ============================================================
         # PRÓXIMA SESIÓN
@@ -985,7 +978,7 @@ def clinica_expedientePaciente():
             FROM paciente_evaluacion pe
             JOIN evaluaciones_progreso ep
                 ON ep.id_evaluacion = pe.id_evaluacion
-            WHERE pe.id_paciente = %1
+            WHERE pe.id_paciente = %s
             ORDER BY ep.fecha DESC
         """, (id_paciente,), fetchall=True)
 

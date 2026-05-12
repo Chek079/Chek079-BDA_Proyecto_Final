@@ -345,18 +345,13 @@
     <main class="main-content">
 
       {% if paciente %}
-
       <!-- HERO -->
       <div class="exp-hero">
-
         <div class="avatar">
           {{ paciente.nombre[0] }}{{ paciente.apellido_paterno[0] }}
         </div>
-
         <div class="hero-info">
-
           <h1>{{ paciente.nombre_completo }}</h1>
-
           <p>
           <i class="fa-solid fa-stethoscope"></i>
           {{ paciente.diagnostico_principal or 'Sin diagnóstico registrado' }}
