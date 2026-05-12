@@ -2,9 +2,20 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import psycopg2
 import psycopg2.extras
 from functools import wraps
+from pymongo import MongoClient
  
 app = Flask(__name__)
 app.secret_key = '1234'
+
+
+
+
+# Conexión MongoDB
+mongo_client = MongoClient('mongodb://localhost:27017/')
+mongo_db     = mongo_client['rehab_iot']
+
+
+
 
 # Variable global para guardar última ubicación GPS
 ultima_ubicacion = {'lat': None, 'lon': None, 'device': None}
@@ -1030,152 +1041,93 @@ def nfc_registrar():
     except Exception as e:
         return jsonify({'success': False, 'mensaje': f'Error: {e}'})
 
-# API
-@app.route('/api/kpi/tendencia-asistencias')
+
+
+@app.route('/admin/reportes')
 @login_required
 @role_required('admin')
-def api_tendencia_asistencias():
-    dias = request.args.get('dias', default=30, type=int)
-
-    res = query("""
-        SELECT fecha_registro, total_asistencias,
-            total_cancelaciones
-        FROM vw_kpi_tendencia_asistencias
-        WHERE fecha >= CURRENT_DATE - (%s || ' days')::INTERVAL
-        ORDER BY fecha ASC
-    """, (dias,), fetchall=True)
-
-    return jsonify({
-        "fechas": [r['fecha_registro'] for r in res],
-        "asistencias": [r['total_asistencias'] for r in res],
-        "cancelaciones": [r['total_cancelaciones'] for r in res]
-    })
-
-@app.route('/api/kpi/estados_sesiones')
+def admin_reportes():
+    # Obtener última sincronización
+    meta = mongo_db.meta.find_one({}, {'_id': 0})
+    ultima_sync = meta['ultima_sync'] if meta else 'Sin sincronizar'
+    return render_template('admin_reportes.html', ultima_sync=ultima_sync)
+ 
+ 
+# ─── API ENDPOINTS PARA HIGHCHARTS (datos de MongoDB) ─────────
+ 
+@app.route('/api/charts/estados-sesiones')
 @login_required
-@role_required('admin')
 def api_estados_sesiones():
-    res = query("""
-                SELECT estado_sesion, total
-                FROM vw_highcharts_estados_sesiones;
-                """, fetchall=True)
-
-    return jsonify({
-        "estado_sesion": [row["estado_sesion"] for row in res],
-        "total": [row["total"] for row in res]
-        })
-
-@app.route('/api/kpi/asistencia_pacientes')
+    datos = list(mongo_db.estados_sesiones.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+@app.route('/api/charts/sesiones-terapeuta')
 @login_required
-@role_required('admin')
-def api_asistencia_pacientes():
-    res = query("""
-        SELECT
-            paciente,
-            porcentaje_asistencia
-        FROM vw_reporte_asistencia;
-    """, fetchall=True)
-
-    return jsonify({
-        "paciente": [row["paciente"] for row in res],
-        "porcentaje_asistencia": [float(row["porcentaje_asistencia"]) for row in res]
-    })
-
-@app.route('/api/kpi/sesiones_terapeuta')
-@login_required
-@role_required('admin')
 def api_sesiones_terapeuta():
-    res = query("""
-        SELECT
-            terapeuta,
-            total_sesiones
-        FROM vw_highcharts_sesiones_terapeuta;
-    """, fetchall=True)
-
-    return jsonify({
-        "terapeuta": [row["terapeuta"] for row in res],
-        "total_sesiones": [row["total_sesiones"] for row in res]
-    })
-
-@app.route('/api/kpi/tipos_sesion')
+    datos = list(mongo_db.sesiones_terapeuta.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+@app.route('/api/charts/tipos-sesion')
 @login_required
-@role_required('admin')
 def api_tipos_sesion():
-
-    res = query("""
-        SELECT
-            nombre,
-            total
-        FROM vw_highcharts_tipos_sesion;
-    """, fetchall=True)
-
-    return jsonify({
-        "nombre": [row["nombre"] for row in res],
-        "total": [row["total"] for row in res]
-    })
-
-@app.route('/api/kpi/evolucion_dolor')
+    datos = list(mongo_db.tipos_sesion.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+@app.route('/api/charts/evolucion-dolor')
 @login_required
-@role_required('admin')
 def api_evolucion_dolor():
-
-    res = query("""
-        SELECT
-            fecha,
-            dolor_promedio
-        FROM vw_highcharts_evolucion_dolor;
-    """, fetchall=True)
-
-    return jsonify({
-        "fecha": [str(row["fecha"]) for row in res],
-        "dolor_promedio": [float(row["dolor_promedio"]) for row in res]
-    })
-
-@app.route('/api/kpi/evolucion_movilidad')
+    datos = list(mongo_db.evolucion_dolor.find({}, {'_id': 0}))
+    # Convertir fecha a string si es objeto date
+    for d in datos:
+        if hasattr(d.get('fecha'), 'isoformat'):
+            d['fecha'] = d['fecha'].isoformat()
+    return jsonify(datos)
+ 
+@app.route('/api/charts/evolucion-movilidad')
 @login_required
-@role_required('admin')
 def api_evolucion_movilidad():
-    res = query("""
-        SELECT
-            fecha,
-            movilidad_promedio
-        FROM vw_highcharts_evolucion_movilidad;
-    """, fetchall=True)
-
-    return jsonify({
-        "fecha": [str(row["fecha"]) for row in res],
-        "movilidad_promedio": [float(row["movilidad_promedio"]) for row in res]
-    })
-
-@app.route('/api/kpi/tendencia_sesiones')
+    datos = list(mongo_db.evolucion_movilidad.find({}, {'_id': 0}))
+    for d in datos:
+        if hasattr(d.get('fecha'), 'isoformat'):
+            d['fecha'] = d['fecha'].isoformat()
+    return jsonify(datos)
+ 
+@app.route('/api/charts/tendencia-sesiones')
 @login_required
-@role_required('admin')
 def api_tendencia_sesiones():
-    res = query("""
-        SELECT
-            fecha,
-            total
-        FROM vw_highcharts_tendencia_sesiones;
-    """, fetchall=True)
-
-    return jsonify({
-        "fecha": [str(row["fecha"]) for row in res],
-        "total": [row["total"] for row in res]
-    })
-
-@app.route('/api/kpi/tendencia_sexo')
+    datos = list(mongo_db.tendencia_sesiones.find({}, {'_id': 0}))
+    for d in datos:
+        if hasattr(d.get('fecha'), 'isoformat'):
+            d['fecha'] = d['fecha'].isoformat()
+    return jsonify(datos)
+ 
+@app.route('/api/charts/pacientes-sexo')
+@login_required
+def api_pacientes_sexo():
+    datos = list(mongo_db.pacientes_sexo.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+@app.route('/api/charts/asistencia-pacientes')
+@login_required
+def api_asistencia_pacientes():
+    datos = list(mongo_db.asistencia_pacientes.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+ 
+# ─── Sincronizar MongoDB manualmente desde el admin ───────────
+@app.route('/admin/sync-mongo', methods=['POST'])
 @login_required
 @role_required('admin')
-def api_tendencia_sexo():
-    res = query("""
-        SELECT nombre, total
-        FROM vw_highcharts_pacientes_sexo;
-    """, fetchall=True)
+def admin_sync_mongo():
+    try:
+        import subprocess
+        subprocess.Popen(['python3', 'sync_mongo.py'])
+        return jsonify({'ok': True, 'mensaje': 'Sincronización iniciada'})
+    except Exception as e:
+        return jsonify({'ok': False, 'mensaje': str(e)})
 
-    return jsonify({
-        "nombre": [str(row["nombre"]) for row in res],
-        "total": [row["total"] for row in res]
-    })
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
