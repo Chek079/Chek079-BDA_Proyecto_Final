@@ -1,42 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - Centro de Rehabilitación</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
-  <link rel="stylesheet" href="{{url_for('static',filename='css/admin_base.css')}}">
-  <link rel="stylesheet" href="{{url_for('static',filename='css/admin_dashboard.css')}}">
-</head>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Centro de Rehabilitación</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{url_for('static',filename='css/admin_base.css')}}">
+    <link rel="stylesheet" href="{{url_for('static',filename='css/admin_dashboard.css')}}">
+  </head>
 
-<body>
+  <body>
 
-  <!-- Inicio de SIDEBAR -->
-  <nav class="sidebar">
-    <div class="sidebar-header">
-      <h1> Rehab IoT <h1>
-    </div>
-    <ul class="nav-links">
-      <li><a href="{{url_for('admin_dashboard')}}" class="active"><i class="fa-solid fa-arrows-to-circle"></i>
-          Dashboard</a></li>
-      <li><a href="{{url_for('admin_obtenerPacientes')}}"> <i class="fa-solid fa-clipboard-user"></i>Pacientes</a></li>
-      <li><a href="{{url_for('admin_obtenerTerapeutas')}}"> <i class="fa-solid fa-user-group"></i> Terapeutas</a></li>
-      <li><a href="{{url_for('admin_obtenerSesiones')}}"> <i class="fa-solid fa-house-chimney-user"></i> Sesiones </a>
-      </li>
-      <li><a href="{{url_for('admin_obtenerBeacons')}}"><i class="fa-solid fa-cubes-stacked"></i> Zonas (Beacons)</a>
-      </li>
-      <li><a href="{{url_for('admin_reportes')}}"> <i class="fa-solid fa-book"></i> Reportes </a></li>
-      <li><a href="{{url_for('logout')}}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
-    </ul>
-  </nav>
-  <!-- Fin de SIDEBAR -->
+    <!-- Inicio de SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h1> Rehab IoT <h1>
+      </div>
+      <ul class="nav-links">
+        <li><a href="{{url_for('admin_dashboard')}}" class="active"><i class="fa-solid fa-arrows-to-circle"></i>
+            Dashboard</a></li>
+        <li><a href="{{url_for('admin_obtenerPacientes')}}"> <i class="fa-solid fa-clipboard-user"></i>Pacientes</a></li>
+        <li><a href="{{url_for('admin_obtenerTerapeutas')}}"> <i class="fa-solid fa-user-group"></i> Terapeutas</a></li>
+        <li><a href="{{url_for('admin_obtenerSesiones')}}"> <i class="fa-solid fa-house-chimney-user"></i> Sesiones </a>
+        </li>
+        <li><a href="{{url_for('admin_obtenerBeacons')}}"><i class="fa-solid fa-cubes-stacked"></i> Zonas (Beacons)</a>
+        </li>
+        <li><a href="{{url_for('admin_reportes')}}"> <i class="fa-solid fa-book"></i> Reportes </a></li>
+        <li><a href="{{url_for('logout')}}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
+      </ul>
+    </nav>
+    <!-- Fin de SIDEBAR -->
 
-  <main class="main-content">
-    <div class="header">
-      <h1>Panel de Control Global</h1>
-      <p>Bienvenido, <strong>{{ session.id }}</strong></p>
-    </div>
+    <main class="main-content">
+      <div class="header">
+        <h1>Panel de Control Global</h1>
+        <p>Bienvenido, <strong>{{ session.id }}</strong></p>
+      </div>
 
       <div class="kpi-grid">
         <div class="kpi-card">
@@ -80,64 +80,74 @@
         </div>
       </div>
 
-    <div class="panel-grid">
-      <div class="panel">
-        <h2 class="panel-title">Últimos Registros (NFC)</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Hora</th>
-              <th>Paciente</th>
-              <th>Zona</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>10:15 AM</td>
-              <td>María González</td>
-              <td>Gimnasio</td>
-              <td><span class="badge">Check-in</span></td>
-            </tr>
-            <tr>
-              <td>09:45 AM</td>
-              <td>Carlos López</td>
-              <td>Hidroterapia</td>
-              <td><span class="badge" style="background-color: var(--success);">Completado</span></td>
-            </tr>
-            <tr>
-              <td>09:30 AM</td>
-              <td>Ana Silva</td>
-              <td>Recepción</td>
-              <td><span class="badge">Consulta</span></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="panel-grid">
+
+        <div class="panel">
+          <h2 class="panel-title">Sesiones por Día</h2>
+          <div id="graficaSesiones" style="height: 350px;"></div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">Pacientes por Zona</h2>
+          <div id="graficaZonas" style="height: 350px;"></div>
+        </div>
       </div>
 
-      <div class="panel">
-        <h2 class="panel-title">Estado de Zonas</h2>
-        <ul style="list-style: none; padding: 0;">
-          <li style="margin-bottom: 15px;">
-            <strong>Sala de Espera:</strong> 4 pacientes
-          </li>
-          <li style="margin-bottom: 15px;">
-            <strong>Gimnasio:</strong> 6 pacientes
-          </li>
-          <li style="margin-bottom: 15px;">
-            <strong>Consultorio 1:</strong> Vacío
-          </li>
-        </ul>
-        <a href="{{url_for('admin_obtenerBeacons')}}">
-          <button
-            style="width: 100%; padding: 10px; background-color: var(--accent-teal); color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
-            Ver Mapa de Zonas
-          </button>
-        </a>
 
-      </div>
-    </div>
-  </main>
-</body>
+
+    </main>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script>
+
+      const sesionesData = {{ sesiones_chart | tojson | safe }};
+      const zonasData = {{ zonas_chart | tojson | safe }};
+
+      Highcharts.chart('graficaSesiones', {
+
+        chart: {
+          type: 'line'
+        },
+
+        title: {
+          text: 'Sesiones Registradas'
+        },
+
+        xAxis: {
+          categories: sesionesData.map(x => x.fecha)
+        },
+
+        yAxis: {
+          title: {
+            text: 'Sesiones'
+          }
+        },
+
+        series: [{
+          name: 'Sesiones',
+          data: sesionesData.map(x => parseInt(x.total))
+        }]
+      });
+
+      Highcharts.chart('graficaZonas', {
+
+        chart: {
+          type: 'pie'
+        },
+
+        title: {
+          text: 'Distribución por Zona'
+        },
+
+        series: [{
+          name: 'Pacientes',
+          data: zonasData.map(x => ({
+            name: x.ubicacion,
+            y: parseInt(x.total)
+          }))
+        }]
+      });
+
+    </script>
+  </body>
 
 </html>

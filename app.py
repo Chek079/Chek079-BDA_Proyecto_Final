@@ -217,43 +217,110 @@ def logout():
 # ═══════════════════════════════════════════════════════════════════════════════
 # ADMIN
 # ═══════════════════════════════════════════════════════════════════════════════
-
 @app.route('/admin/dashboard')
 @login_required
 @role_required('admin')
 def admin_dashboard():
+
     try:
         kpi = {
-            "pacientes_activos": query("""SELECT COUNT(DISTINCT id_paciente) AS pacientes_activos FROM paciente_sesion;""", fetchone=True)["pacientes_activos"],
+            "pacientes_activos": query("""
+                SELECT COUNT(DISTINCT id_paciente) AS total
+                FROM paciente_sesion;
+            """, fetchone=True)["total"],
 
-            "sesiones_hoy": query("""SELECT COUNT(*) AS sesiones_hoy FROM sesiones WHERE fecha = CURRENT_DATE;""", fetchone=True)["sesiones_hoy"],
+            "sesiones_hoy": query("""
+                SELECT COUNT(*) AS total
+                FROM sesiones
+                WHERE fecha = CURRENT_DATE;
+            """, fetchone=True)["total"],
 
-            "tasa_aderencia": query("""SELECT ROUND((COUNT(CASE WHEN asistencia = TRUE THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2) AS tasa_asistencia FROM sesiones;""", fetchone=True)["tasa_asistencia"],
+            "tasa_aderencia": query("""
+                SELECT ROUND( ( COUNT( CASE WHEN asistencia = TRUE THEN 1 END)::DECIMAL / NULLIF(COUNT(*), 0)) * 100, 2
+                ) AS total
+                FROM sesiones;
+            """, fetchone=True)["total"],
 
-            "efectividad_promedio": query("""SELECT ROUND(AVG((nivel_movilidad + resistencia + (10 - nivel_dolor)) / 3.0), 2) AS efectividad_promedio FROM evaluaciones_progreso;""", fetchone=True)["efectividad_promedio"],
+            "efectividad_promedio": query(""" SELECT ROUND( AVG( ( nivel_movilidad + resistencia + (10 - nivel_dolor)) / 3.0), 2) AS total
+                FROM evaluaciones_progreso;
+            """, fetchone=True)["total"],
 
-            "sesiones_finalizadas": query("""SELECT COUNT(*) AS sesiones_finalizadas FROM sesiones WHERE estado_sesion = 'FINALIZADA';""", fetchone=True)["sesiones_finalizadas"],
+            "sesiones_finalizadas": query("""
+                SELECT COUNT(*) AS total
+                FROM sesiones
+                WHERE estado_sesion = 'FINALIZADA';
+            """, fetchone=True)["total"],
 
-            "tiempo_promedio_sesion": query("""SELECT ROUND( AVG( EXTRACT(EPOCH FROM (hora_fin_real - hora_inicio_real)) / 60), 2) AS tiempo_promedio_minutos FROM sesiones WHERE hora_inicio_real IS NOT NULL AND hora_fin_real IS NOT NULL;""", fetchone=True)["tiempo_promedio_minutos"]
-            }
-        nfc_recientes = query(
-            """SELECT a.fecha, a.hora_entrada,
-                      p.nombre || ' ' || p.apellido_paterno AS paciente,
-                      d.ubicacion AS zona
-               FROM   asistencias_nfc a
-               JOIN   pacientes p ON p.id_paciente = a.id_paciente
-               JOIN   dispositivos_nfc d ON d.id_dispositivo = a.id_dispositivo
-               ORDER  BY a.fecha DESC, a.hora_entrada DESC
-               LIMIT  10""",
-            fetchall=True
-        )
-    except Exception:
-        kpis = {}
-        nfc_recientes = None, []
+            "sesiones_en_curso": query("""
+                SELECT COUNT(*) AS total
+                FROM sesiones
+                WHERE estado_sesion = 'EN_CURSO';
+            """, fetchone=True)["total"],
 
-    return render_template('admin_dashboard.html', 
-                           kpi = kpi,
-                           nfc_recientes=nfc_recientes or [])
+            "pacientes_unicos": query("""
+                SELECT COUNT(*) AS total
+                FROM pacientes;
+            """, fetchone=True)["total"],
+
+            "terapeutas_activos": query("""
+                SELECT COUNT(*) AS total
+                FROM usuarios
+                WHERE rol = 'terapeuta'
+                AND activo = TRUE;
+            """, fetchone=True)["total"],
+
+            "tiempo_promedio_sesion": query("""
+                SELECT ROUND( AVG( EXTRACT( EPOCH FROM ( hora_fin_real - hora_inicio_real)) / 60), 2) AS total
+                FROM sesiones
+                WHERE hora_inicio_real IS NOT NULL
+                AND hora_fin_real IS NOT NULL;
+            """, fetchone=True)["total"]
+        }
+
+        nfc_recientes = query("""
+            SELECT
+                a.fecha,
+                a.hora_entrada,
+                p.nombre || ' ' || p.apellido_paterno AS paciente,
+                d.ubicacion AS zona
+            FROM asistencias_nfc a
+            JOIN pacientes p
+                ON p.id_paciente = a.id_paciente
+            JOIN dispositivos_nfc d
+                ON d.id_dispositivo = a.id_dispositivo
+            ORDER BY a.fecha DESC, a.hora_entrada DESC
+            LIMIT 10;
+        """, fetchall=True)
+
+        sesiones_chart = query("""
+            SELECT TO_CHAR(fecha, 'DD/MM') AS fecha, COUNT(*) AS total
+            FROM sesiones
+            GROUP BY fecha
+            ORDER BY fecha;
+        """, fetchall=True)
+
+        zonas_chart = query("""
+            SELECT d.ubicacion, COUNT(*) AS total
+            FROM asistencias_nfc a JOIN dispositivos_nfc d ON d.id_dispositivo = a.id_dispositivo
+            GROUP BY d.ubicacion
+            ORDER BY total DESC;
+        """, fetchall=True)
+
+    except Exception as e:
+
+        print(f'Error dashboard admin: {e}')
+        kpi = {}
+        nfc_recientes = []
+        sesiones_chart = []
+        zonas_chart = []
+
+    return render_template(
+        'admin_dashboard.html',
+        kpi=kpi,
+        nfc_recientes=nfc_recientes,
+        sesiones_chart=sesiones_chart,
+        zonas_chart=zonas_chart
+    )
 
 @app.route('/admin/paciente')
 @login_required
