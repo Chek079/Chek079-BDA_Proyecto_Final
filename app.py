@@ -553,7 +553,7 @@ def admin_editar_sesion(id_sesion):
     except Exception:
         sesion, tipos, metodos = None, [], []
 
-    return render_template('admin_registrarSesion.html',
+    return render_template('admin_actualizarSesion.html',
                            sesion=sesion,
                            tipos=tipos or [],
                            metodos=metodos or [])
