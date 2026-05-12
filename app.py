@@ -1446,21 +1446,6 @@ def api_estados_sesiones():
 def api_sesiones_terapeuta():
     datos = list(mongo_db.sesiones_terapeuta.find({}, {'_id': 0}))
     return jsonify(datos)
- 
-@app.route('/api/charts/tipos-sesion')
-@role_required('admin')
-def api_asistencia_pacientes():
-    res = query("""
-                SELECT
-                paciente,
-                porcentaje_asistencia
-                FROM vw_reporte_asistencia;
-                """, fetchall=True)
-
-    return jsonify({
-        "paciente": [row["paciente"] for row in res],
-        "porcentaje_asistencia": [float(row["porcentaje_asistencia"]) for row in res]
-        })
 
 @app.route('/api/kpi/tipos_sesion')
 @login_required
