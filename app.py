@@ -2,9 +2,18 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import psycopg2
 import psycopg2.extras
 from functools import wraps
+from pymongo import MongoClient
  
 app = Flask(__name__)
 app.secret_key = '1234'
+
+
+
+
+# Conexión MongoDB
+mongo_client = MongoClient('mongodb://localhost:27017/')
+mongo_db     = mongo_client['rehab_iot']
+
 
 
 
@@ -423,27 +432,6 @@ def admin_obtenerBeacons():
         beacons = []
     return render_template('admin_beacons.html', beacons=beacons or [])
 
-@app.route('/admin/reportes')
-@login_required
-@role_required('admin')
-def admin_reportes():
-    try:
-        kpi = {
-            "pacientes_activos": query("""SELECT COUNT(DISTINCT id_paciente) AS pacientes_activos FROM paciente_sesion;""", fetchone=True)["pacientes_activos"],
-
-            "sesiones_hoy": query("""SELECT COUNT(*) AS sesiones_hoy FROM sesiones WHERE fecha = CURRENT_DATE;""", fetchone=True)["sesiones_hoy"],
-
-            "tasa_aderencia": query("""SELECT ROUND((COUNT(CASE WHEN asistencia = TRUE THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2) AS tasa_asistencia FROM sesiones;""", fetchone=True)["tasa_asistencia"],
-
-            "efectividad_promedio": query("""SELECT ROUND(AVG((nivel_movilidad + resistencia + (10 - nivel_dolor)) / 3.0), 2) AS efectividad_promedio FROM evaluaciones_progreso;""", fetchone=True)["efectividad_promedio"],
-
-            "sesiones_finalizadas": query("""SELECT COUNT(*) AS sesiones_finalizadas FROM sesiones WHERE estado_sesion = 'FINALIZADA';""", fetchone=True)["sesiones_finalizadas"],
-
-            "tiempo_promedio_sesion": query("""SELECT ROUND( AVG( EXTRACT(EPOCH FROM (hora_fin_real - hora_inicio_real)) / 60), 2) AS tiempo_promedio_minutos FROM sesiones WHERE hora_inicio_real IS NOT NULL AND hora_fin_real IS NOT NULL;""", fetchone=True)["tiempo_promedio_minutos"]
-            }
-    except Exception:
-        kpi = {}
-    return render_template('admin_reportes.html', kpi=kpi)
 
 
 
@@ -1069,6 +1057,94 @@ def nfc_registrar():
 
     except Exception as e:
         return jsonify({'success': False, 'mensaje': f'Error: {e}'})
+
+
+
+@app.route('/admin/reportes')
+@login_required
+@role_required('admin')
+def admin_reportes():
+    # Obtener última sincronización
+    meta = mongo_db.meta.find_one({}, {'_id': 0})
+    ultima_sync = meta['ultima_sync'] if meta else 'Sin sincronizar'
+    return render_template('admin_reportes.html', ultima_sync=ultima_sync)
+ 
+ 
+# ─── API ENDPOINTS PARA HIGHCHARTS (datos de MongoDB) ─────────
+ 
+@app.route('/api/charts/estados-sesiones')
+@login_required
+def api_estados_sesiones():
+    datos = list(mongo_db.estados_sesiones.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+@app.route('/api/charts/sesiones-terapeuta')
+@login_required
+def api_sesiones_terapeuta():
+    datos = list(mongo_db.sesiones_terapeuta.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+@app.route('/api/charts/tipos-sesion')
+@login_required
+def api_tipos_sesion():
+    datos = list(mongo_db.tipos_sesion.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+@app.route('/api/charts/evolucion-dolor')
+@login_required
+def api_evolucion_dolor():
+    datos = list(mongo_db.evolucion_dolor.find({}, {'_id': 0}))
+    # Convertir fecha a string si es objeto date
+    for d in datos:
+        if hasattr(d.get('fecha'), 'isoformat'):
+            d['fecha'] = d['fecha'].isoformat()
+    return jsonify(datos)
+ 
+@app.route('/api/charts/evolucion-movilidad')
+@login_required
+def api_evolucion_movilidad():
+    datos = list(mongo_db.evolucion_movilidad.find({}, {'_id': 0}))
+    for d in datos:
+        if hasattr(d.get('fecha'), 'isoformat'):
+            d['fecha'] = d['fecha'].isoformat()
+    return jsonify(datos)
+ 
+@app.route('/api/charts/tendencia-sesiones')
+@login_required
+def api_tendencia_sesiones():
+    datos = list(mongo_db.tendencia_sesiones.find({}, {'_id': 0}))
+    for d in datos:
+        if hasattr(d.get('fecha'), 'isoformat'):
+            d['fecha'] = d['fecha'].isoformat()
+    return jsonify(datos)
+ 
+@app.route('/api/charts/pacientes-sexo')
+@login_required
+def api_pacientes_sexo():
+    datos = list(mongo_db.pacientes_sexo.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+@app.route('/api/charts/asistencia-pacientes')
+@login_required
+def api_asistencia_pacientes():
+    datos = list(mongo_db.asistencia_pacientes.find({}, {'_id': 0}))
+    return jsonify(datos)
+ 
+ 
+# ─── Sincronizar MongoDB manualmente desde el admin ───────────
+@app.route('/admin/sync-mongo', methods=['POST'])
+@login_required
+@role_required('admin')
+def admin_sync_mongo():
+    try:
+        import subprocess
+        subprocess.Popen(['python3', 'sync_mongo.py'])
+        return jsonify({'ok': True, 'mensaje': 'Sincronización iniciada'})
+    except Exception as e:
+        return jsonify({'ok': False, 'mensaje': str(e)})
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
