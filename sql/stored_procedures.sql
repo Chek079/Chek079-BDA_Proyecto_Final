@@ -327,23 +327,22 @@ END;
 $$;
 
 
--- ── sp_finalizar_sesion_real ──────────────────────────────────
 CREATE OR REPLACE PROCEDURE sp_finalizar_sesion_real(
-  p_id_sesion     INTEGER,
-  p_observaciones TEXT DEFAULT NULL
+    p_id_sesion INTEGER,
+    p_observaciones TEXT DEFAULT NULL
 )
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+AS $$
 BEGIN
-  UPDATE sesiones
-  SET    hora_fin_real          = NOW(),
-  estado_sesion          = 'FINALIZADA',
-  observaciones_clinicas = COALESCE(p_observaciones, observaciones_clinicas)
-  WHERE  id_sesion     = p_id_sesion
-  AND  estado_sesion = 'EN_CURSO';
+    UPDATE sesiones
+    SET hora_fin_real = NOW(),
+        estado_sesion = 'FINALIZADA',
+        observaciones_clinicas = COALESCE(p_observaciones, observaciones_clinicas)
+    WHERE id_sesion = p_id_sesion
+    AND estado_sesion = 'EN_CURSO';
 
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Sesión % no está en curso.', p_id_sesion;
-  END IF;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'La sesión % no está en curso.', p_id_sesion;
+    END IF;
 END;
 $$;
-

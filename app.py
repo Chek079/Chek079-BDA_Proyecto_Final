@@ -565,30 +565,109 @@ def admin_editar_sesion(id_sesion):
 # CLÍNICA (TERAPEUTA)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-
 @app.route('/clinica/dashboard')
 @login_required
 @role_required('terapeuta')
 def clinica_dashboard():
+
     id_terapeuta = session.get('ref_id')
     try:
-        citas_hoy = query(
-            "SELECT * FROM vw_agenda_terapeuta WHERE id_terapeuta = %s ORDER BY hora_inicio",
-            (id_terapeuta,), fetchall=True
-        )
+        citas_hoy = query("""
+            SELECT * FROM vw_agenda_terapeuta
+            WHERE id_terapeuta = %s
+            ORDER BY hora_inicio;
+        """, (id_terapeuta,), fetchall=True)
+
         kpis = call_procedure_out(
-            "CALL sp_kpis_terapeuta(%s, CURRENT_DATE, NULL, NULL, NULL, NULL, NULL)",
+            """
+            CALL sp_kpis_terapeuta( %s, CURRENT_DATE, NULL, NULL, NULL, NULL, NULL)
+            """,
             (id_terapeuta,)
         )
-    except Exception:
-        citas_hoy, kpis = [], None
- 
-    return render_template('clinica_dashboard.html',
-                           terapeuta_nombre=session.get('nombre', ''),
-                           citas_hoy=citas_hoy or [],
-                           total_citas=kpis['o_total_citas'] if kpis else 0,
-                           pacientes_espera=kpis['o_en_espera'] if kpis else 0,
-                           atendidos_hoy=kpis['o_atendidos'] if kpis else 0)
+
+        pacientes_chart = query("""
+            SELECT
+                p.nombre || ' ' || p.apellido_paterno AS paciente,
+                COUNT(ps.id_sesion) AS total_sesiones
+            FROM paciente_sesion ps
+            JOIN sesiones s ON s.id_sesion = ps.id_sesion
+            JOIN pacientes p ON p.id_paciente = ps.id_paciente
+            JOIN terapeuta_sesion ts ON ts.id_sesion = s.id_sesion
+            WHERE ts.id_terapeuta = %s
+            GROUP BY paciente
+            ORDER BY total_sesiones DESC;
+        """, (id_terapeuta,), fetchall=True)
+
+        kpis_dashboard = {
+
+            "agenda_total": len(citas_hoy),
+
+            "en_curso": len([
+                x for x in citas_hoy
+                if x["estado_sesion"] == "EN_CURSO"
+            ]),
+
+            "finalizadas": len([
+                x for x in citas_hoy
+                if x["estado_sesion"] == "FINALIZADA"
+            ]),
+
+            "no_llegan": len([
+                x for x in citas_hoy
+                if x["estado_ubicacion"] == "No_Llegado"
+            ]),
+
+            "sala_espera": len([
+                x for x in citas_hoy
+                if x["estado_ubicacion"] == "Sala_Espera"
+            ]),
+
+            "consultorio": len([
+                x for x in citas_hoy
+                if x["estado_ubicacion"] == "Consultorio"
+            ])
+        }
+
+    except Exception as e:
+
+        print(f'Error dashboard terapeuta: {e}')
+
+        citas_hoy = []
+        pacientes_chart = []
+
+        kpis = {
+            "o_total_citas": 0,
+            "o_en_espera": 0,
+            "o_atendidos": 0
+        }
+
+        kpis_dashboard = {
+            "agenda_total": 0,
+            "en_curso": 0,
+            "finalizadas": 0,
+            "no_llegan": 0,
+            "sala_espera": 0,
+            "consultorio": 0
+        }
+
+    return render_template(
+        'clinica_dashboard.html',
+
+        terapeuta_nombre=session.get('nombre', ''),
+
+        citas_hoy=citas_hoy,
+
+        # Stored Procedure KPIs
+        total_citas=kpis.get('o_total_citas', 0),
+        pacientes_espera=kpis.get('o_en_espera', 0),
+        atendidos_hoy=kpis.get('o_atendidos', 0),
+
+        # Highcharts
+        pacientes_chart=pacientes_chart,
+
+        # KPIs Dashboard
+        kpis_dashboard=kpis_dashboard
+    )
 
 @app.route('/clinica/pacientes')
 @login_required
@@ -659,21 +738,40 @@ def clinica_expedienteSesion():
     id_terapeuta = session.get('ref_id')
     try:
         sesion = query(
-            """SELECT ps.id_sesion, ps.id_paciente,
-                      p.nombre || ' ' || p.apellido_paterno AS paciente_nombre,
-                      s.hora_inicio, s.hora_fin
-               FROM   terapeuta_sesion ts_rel
-               JOIN   sesiones s  ON s.id_sesion  = ts_rel.id_sesion
-               JOIN   paciente_sesion ps ON ps.id_sesion = s.id_sesion
-               JOIN   pacientes p ON p.id_paciente = ps.id_paciente
-               WHERE  ts_rel.id_terapeuta = %s
-                 AND  s.fecha = CURRENT_DATE AND s.asistencia = TRUE
-               ORDER  BY s.hora_inicio LIMIT 1""",
-            (id_terapeuta,), fetchone=True
+            """
+            SELECT s.id_sesion, ps.id_paciente, p.nombre || ' ' || p.apellido_paterno AS paciente_nombre, s.hora_inicio, s.hora_fin
+            FROM terapeuta_sesion ts_rel
+            JOIN sesiones s ON s.id_sesion = ts_rel.id_sesion
+            JOIN paciente_sesion ps ON ps.id_sesion = s.id_sesion
+            JOIN pacientes p ON p.id_paciente = ps.id_paciente
+            WHERE ts_rel.id_terapeuta = %s
+            AND s.fecha = CURRENT_DATE
+            AND s.estado_sesion = 'EN_CURSO'
+            ORDER BY s.hora_inicio
+            LIMIT 1
+            """,
+            (id_terapeuta,),
+            fetchone=True
         )
+
+        ejercicios = query(
+            """
+            SELECT id_ejercicio, nombre_ejercicio
+            FROM ejercicios
+            ORDER BY nombre_ejercicio ASC
+            """,
+            fetchall=True
+        )
+
     except Exception:
         sesion = None
-    return render_template('clinica_expediente_sesion.html', paciente=sesion)
+        ejercicios = []
+
+    return render_template(
+        'clinica_expediente_sesion.html',
+        paciente=sesion,
+        ejercicios=ejercicios
+    )
 
 @app.route('/clinica/sesion/nueva')
 @login_required
@@ -699,15 +797,11 @@ def clinica_iniciarSesionReal(id_sesion):
 @login_required
 @role_required('terapeuta')
 def clinica_finalizarSesionReal(id_sesion):
-    """Registra hora_fin_real cuando el terapeuta finaliza la sesión"""
-    observaciones = request.form.get('observaciones', '')
+    observaciones = request.form.get('observaciones')
+
     try:
-        query(
-            "CALL sp_finalizar_sesion_real(%s, %s)",
-            (id_sesion, observaciones or None),
-            commit=True
-        )
-        flash('Sesión finalizada correctamente.', 'success')
+        query( "CALL sp_finalizar_sesion_real(%s, %s)", ( id_sesion, observaciones), commit=True)
+        flash( 'Sesión finalizada correctamente.', 'success')
     except Exception as e:
         flash(f'Error: {e}', 'error')
     return redirect(url_for('clinica_dashboard'))
@@ -716,63 +810,236 @@ def clinica_finalizarSesionReal(id_sesion):
 @login_required
 @role_required('terapeuta')
 def clinica_expedientePaciente():
-    id_paciente = request.args.get('id_paciente', type=int)
-    try:
-        paciente = query(
-            "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
-            (id_paciente,), fetchone=True
-        )
-        proxima_sesion = query(
-            """SELECT s.fecha, s.hora_inicio, s.hora_fin, ts.nombre AS tipo_sesion
-               FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
-               WHERE ps.id_paciente = %s AND s.fecha >= CURRENT_DATE
-               ORDER BY s.fecha, s.hora_inicio LIMIT 1""",
-            (id_paciente,), fetchone=True
-        )
-        ultima_sesion = query(
-            """SELECT s.fecha, s.hora_inicio, s.hora_fin,
-                      s.asistencia, s.observaciones_clinicas,
-                      ts.nombre AS tipo_sesion
-               FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
-               WHERE ps.id_paciente = %s AND s.fecha < CURRENT_DATE
-               ORDER BY s.fecha DESC, s.hora_inicio DESC LIMIT 1""",
-            (id_paciente,), fetchone=True
-        )
-        ejercicios_actuales = query(
-            """SELECT DISTINCT e.nombre_ejercicio, esd.repeticiones, esd.duracion_min
-               FROM ejercicio_sesion_detalle esd
-               JOIN sesiones s ON s.id_sesion = esd.id_sesion
-               JOIN paciente_sesion ps ON ps.id_sesion = s.id_sesion
-               JOIN ejercicios e ON e.id_ejercicio = esd.id_ejercicio
-               WHERE ps.id_paciente = %s
-               ORDER BY e.nombre_ejercicio""",
-            (id_paciente,), fetchall=True
-        )
-        sesiones_anteriores = query(
-            """SELECT s.fecha, s.hora_inicio, s.asistencia,
-                      s.observaciones_clinicas, ts.nombre AS tipo_sesion
-               FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
-               WHERE ps.id_paciente = %s
-               ORDER BY s.fecha DESC, s.hora_inicio DESC
-               LIMIT 10""",
-            (id_paciente,), fetchall=True
-        )
-    except Exception:
-        paciente = proxima_sesion = ultima_sesion = None
-        ejercicios_actuales = sesiones_anteriores = []
 
-    return render_template('clinica_expediente_paciente.html',
-                           paciente=paciente,
-                           proxima_sesion=proxima_sesion,
-                           ultima_sesion=ultima_sesion,
-                           ejercicios_actuales=ejercicios_actuales or [],
-                           sesiones_anteriores=sesiones_anteriores or [])
+    id_paciente = request.args.get('id_paciente', type=int)
+
+    if not id_paciente:
+        return redirect(url_for('clinica_obtenerPacientes'))
+
+    try:
+
+        # ============================================================
+        # INFORMACIÓN GENERAL DEL PACIENTE
+        # ============================================================
+        paciente = query("""
+            SELECT *
+            FROM vw_expediente_paciente
+            WHERE id_paciente = %s;
+        """, (id_paciente,), fetchone=True)
+
+        # ============================================================
+        # VALIDAR SI EXISTE
+        # ============================================================
+        if not paciente:
+            return render_template(
+                'clinica_expediente_paciente.html',
+                paciente=None
+            )
+
+        # ============================================================
+        # PRÓXIMA SESIÓN
+        # ============================================================
+        proxima_sesion = query("""
+            SELECT
+                s.fecha,
+                s.hora_inicio,
+                s.hora_fin,
+                ts.nombre AS tipo_sesion,
+                s.estado_sesion
+            FROM paciente_sesion ps
+            JOIN sesiones s
+                ON s.id_sesion = ps.id_sesion
+            JOIN cat_tipos_sesion ts
+                ON ts.id_tipo_sesion = s.id_tipo_sesion
+            WHERE ps.id_paciente = %s
+              AND s.fecha >= CURRENT_DATE
+            ORDER BY s.fecha ASC, s.hora_inicio ASC
+            LIMIT 1;
+        """, (id_paciente,), fetchone=True)
+
+        # ============================================================
+        # ÚLTIMA SESIÓN
+        # ============================================================
+        ultima_sesion = query("""
+            SELECT
+                s.fecha,
+                s.hora_inicio,
+                s.hora_fin,
+                s.asistencia,
+                s.estado_sesion,
+                s.observaciones_clinicas,
+                ts.nombre AS tipo_sesion
+            FROM paciente_sesion ps
+            JOIN sesiones s
+                ON s.id_sesion = ps.id_sesion
+            JOIN cat_tipos_sesion ts
+                ON ts.id_tipo_sesion = s.id_tipo_sesion
+            WHERE ps.id_paciente = %s
+            ORDER BY s.fecha DESC, s.hora_inicio DESC
+            LIMIT 1;
+        """, (id_paciente,), fetchone=True)
+
+        # ============================================================
+        # EJERCICIOS
+        # ============================================================
+        ejercicios_actuales = query("""
+            SELECT DISTINCT
+                e.nombre_ejercicio,
+                esd.repeticiones,
+                esd.duracion_min,
+                nd.nombre AS dificultad
+            FROM ejercicio_sesion_detalle esd
+            JOIN sesiones s
+                ON s.id_sesion = esd.id_sesion
+            JOIN paciente_sesion ps
+                ON ps.id_sesion = s.id_sesion
+            JOIN ejercicios e
+                ON e.id_ejercicio = esd.id_ejercicio
+            LEFT JOIN cat_nivel_dificultad nd
+                ON nd.id_nivel = e.id_nivel_dificultad
+            WHERE ps.id_paciente = %s
+            ORDER BY e.nombre_ejercicio;
+        """, (id_paciente,), fetchall=True)
+
+        # ============================================================
+        # HISTORIAL DE SESIONES
+        # ============================================================
+        sesiones_anteriores = query("""
+            SELECT
+                s.fecha,
+                s.hora_inicio,
+                s.hora_fin,
+                s.asistencia,
+                s.estado_sesion,
+                s.observaciones_clinicas,
+                ts.nombre AS tipo_sesion
+            FROM paciente_sesion ps
+            JOIN sesiones s
+                ON s.id_sesion = ps.id_sesion
+            JOIN cat_tipos_sesion ts
+                ON ts.id_tipo_sesion = s.id_tipo_sesion
+            WHERE ps.id_paciente = %s
+            ORDER BY s.fecha DESC, s.hora_inicio DESC
+            LIMIT 10;
+        """, (id_paciente,), fetchall=True)
+
+        # ============================================================
+        # EVALUACIONES DEL PACIENTE
+        # ============================================================
+        evaluaciones = query("""
+            SELECT
+                ep.fecha,
+                ep.tipo_evaluacion,
+                ep.nivel_movilidad,
+                ep.nivel_dolor,
+                ep.resistencia,
+                ep.progreso_observado,
+                ep.recomendaciones
+            FROM paciente_evaluacion pe
+            JOIN evaluaciones_progreso ep
+                ON ep.id_evaluacion = pe.id_evaluacion
+            WHERE pe.id_paciente = %s
+            ORDER BY ep.fecha DESC;
+        """, (id_paciente,), fetchall=True)
+
+        # ============================================================
+        # ALERGIAS
+        # ============================================================
+        alergias = query("""
+            SELECT alergia
+            FROM paciente_alergia
+            WHERE id_paciente = %s;
+        """, (id_paciente,), fetchall=True)
+
+        # ============================================================
+        # MEDICAMENTOS
+        # ============================================================
+        medicamentos = query("""
+            SELECT medicamento_actual
+            FROM paciente_medicamento
+            WHERE id_paciente = %s;
+        """, (id_paciente,), fetchall=True)
+
+        # ============================================================
+        # LESIONES
+        # ============================================================
+        lesiones = query("""
+            SELECT lesion_previa
+            FROM paciente_lesion
+            WHERE id_paciente = %s;
+        """, (id_paciente,), fetchall=True)
+
+        # ============================================================
+        # KPI DEL PACIENTE
+        # ============================================================
+        kpis_paciente = query("""
+            SELECT
+                COUNT(*) AS total_sesiones,
+
+                COUNT(
+                    CASE
+                        WHEN s.asistencia = TRUE THEN 1
+                    END
+                ) AS sesiones_asistidas,
+
+                ROUND(
+                    COUNT(
+                        CASE
+                            WHEN s.asistencia = TRUE THEN 1
+                        END
+                    )::NUMERIC
+                    /
+                    NULLIF(COUNT(*), 0) * 100,
+                    2
+                ) AS porcentaje_asistencia
+
+            FROM paciente_sesion ps
+            JOIN sesiones s
+                ON s.id_sesion = ps.id_sesion
+            WHERE ps.id_paciente = %s;
+        """, (id_paciente,), fetchone=True)
+
+    except Exception as e:
+
+        print(f'Error expediente paciente: {e}')
+
+        paciente = None
+        proxima_sesion = None
+        ultima_sesion = None
+
+        ejercicios_actuales = []
+        sesiones_anteriores = []
+        evaluaciones = []
+
+        alergias = []
+        medicamentos = []
+        lesiones = []
+
+        kpis_paciente = {
+            "total_sesiones": 0,
+            "sesiones_asistidas": 0,
+            "porcentaje_asistencia": 0
+        }
+
+    return render_template(
+        'clinica_expediente_paciente.html',
+
+        paciente=paciente,
+
+        proxima_sesion=proxima_sesion,
+        ultima_sesion=ultima_sesion,
+
+        ejercicios_actuales=ejercicios_actuales,
+        sesiones_anteriores=sesiones_anteriores,
+
+        evaluaciones=evaluaciones,
+
+        alergias=alergias,
+        medicamentos=medicamentos,
+        lesiones=lesiones,
+
+        kpis_paciente=kpis_paciente
+    )
 
 
 
