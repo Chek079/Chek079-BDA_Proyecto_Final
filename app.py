@@ -996,7 +996,7 @@ def clinica_expedientePaciente():
             FROM paciente_evaluacion pe
             JOIN evaluaciones_progreso ep
                 ON ep.id_evaluacion = pe.id_evaluacion
-            WHERE pe.id_paciente = %1
+            WHERE pe.id_paciente = %s
             ORDER BY ep.fecha DESC
         """, (id_paciente,), fetchall=True)
 
@@ -1428,23 +1428,6 @@ def admin_reportes():
     return render_template('admin_reportes.html', ultima_sync=ultima_sync)
  
 # ─── API ENDPOINTS PARA HIGHCHARTS (datos de MongoDB) ─────────
-@app.route('/api/charts/estados-sesiones')
-def api_tendencia_asistencias():
-    dias = request.args.get('dias', default=30, type=int)
-
-    res = query("""
-                SELECT fecha_registro, total_asistencias,
-                total_cancelaciones
-                FROM vw_kpi_tendencia_asistencias
-                WHERE fecha >= CURRENT_DATE - (%s || ' days')::INTERVAL
-                ORDER BY fecha ASC
-                """, (dias,), fetchall=True)
-
-    return jsonify({
-        "fechas": [r['fecha_registro'] for r in res],
-        "asistencias": [r['total_asistencias'] for r in res],
-        "cancelaciones": [r['total_cancelaciones'] for r in res]
-        })
 
 @app.route('/api/kpi/estados_sesiones')
 @login_required
