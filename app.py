@@ -20,9 +20,6 @@ mongo_db     = mongo_client['rehab_iot']
 # Variable global para guardar última ubicación GPS
 ultima_ubicacion = {'lat': None, 'lon': None, 'device': None}
 
-
-
-
 @app.route('/gps', methods=['GET', 'POST'])
 def gps_osmand():
     global ultima_ubicacion
@@ -76,11 +73,6 @@ def gps_recibir():
 @app.route('/gps/ultima')
 def gps_ultima():
     return jsonify(ultima_ubicacion)
-
-
-
-
-
 
 # Variable global para guardar datos del beacon en memoria
 beacon_data = {'total': 0, 'dispositivos': []}
@@ -303,7 +295,11 @@ def admin_registrarPacientes():
             return redirect(url_for('admin_obtenerPacientes'))
         except Exception as e:
             flash(f'Error al registrar paciente: {e}', 'error')
-    return render_template('admin_registrarPaciente.html')
+    try:
+        terapeutas = query("SELECT id_terapeuta, nombre || ' ' || apellido_paterno AS nombre_completo FROM terapeutas ORDER BY nombre", fetchall=True)
+    except Exception:
+        especialidades = []
+    return render_template('admin_registrarPaciente.html', terapeutas = terapeutas or [])
 
 @app.route('/admin/paciente/eliminar/<int:id_paciente>', methods=['POST'])
 @login_required
@@ -333,10 +329,10 @@ def admin_registrarTerapeutas():
     if request.method == 'POST':
         f = request.form
         try:
-            query( "CALL sp_insertar_terapeuta(%s,%s,%s,%s::INTEGER,%s,%s,%s)",
+            query( "CALL sp_insertar_terapeuta(%s,%s,%s,%s::INTEGER,%s,%s,%s,%s::INTEGER)",
                 (f['nombre'], f['apellido_paterno'], f['apellido_materno'],
                  int(f['especialidad']), f.get('telefono'),
-                 f.get('correo'), f.get('observaciones')), commit=True
+                 f.get('correo'), f.get('observaciones'), int(f['sexo'])), commit=True
             )
             flash('Terapeuta registrado.', 'success')
             return redirect(url_for('admin_obtenerTerapeutas'))
@@ -432,8 +428,15 @@ def admin_obtenerBeacons():
         beacons = []
     return render_template('admin_beacons.html', beacons=beacons or [])
 
-
-
+@app.route('/admin/reportes')
+@login_required
+@role_required('admin')
+def admin_reportes():
+    try:
+        kpi = {}
+    except Exception:
+        kpi = {}
+    return render_template('admin_reportes.html', kpi=kpi)
 
 @app.route('/paciente/editar/<int:id_paciente>', methods=['GET', 'POST'])
 @login_required
@@ -461,14 +464,13 @@ def admin_editar_paciente(id_paciente):
             "SELECT * FROM vw_pacientes_completo WHERE id_paciente = %s",
             (id_paciente,), fetchone=True
         )
-        sexos = query("SELECT * FROM cat_sexo WHERE activo = TRUE", fetchall=True)
         terapeutas = query(
             "SELECT * FROM vw_terapeutas_completo", fetchall=True)
     except Exception:
-        paciente, terapeutas, sexos = None, []
+        paciente, terapeutas = None, []
 
     return render_template('admin_actualizarPaciente.html', 
-                           paciente=paciente, terapeutas=terapeutas or [],sexos=sexos or [])
+                           paciente=paciente, terapeutas=terapeutas or [])
 
 
 
@@ -489,7 +491,7 @@ def admin_editar_terapeuta(id_terapeuta):
             id_especialidad = int(id_especialidad)
 
             query(
-                "CALL sp_actualizar_terapeuta(%s,%s,%s,%s,%s,%s,%s,%s)",
+                "CALL sp_actualizar_terapeuta(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
                     id_terapeuta,
                     f.get('nombre'),
@@ -498,7 +500,8 @@ def admin_editar_terapeuta(id_terapeuta):
                     id_especialidad,
                     f.get('telefono'),
                     f.get('correo'),
-                    f.get('observaciones')
+                    f.get('observaciones'),
+                    int(f['sexo'])
                 ),
                 commit=True
             )
@@ -561,32 +564,12 @@ def admin_editar_sesion(id_sesion):
     except Exception:
         sesion, tipos, metodos = None, [], []
 
-    return render_template('admin_registrarSesion.html',
+    return render_template('admin_actualizarSesion.html',
                            sesion=sesion,
                            tipos=tipos or [],
                            metodos=metodos or [])
 
 
-@app.route('/api/kpi/tendencia-asistencias')
-@login_required
-@role_required('admin')
-def api_tendencia_asistencias():
-
-    dias = request.args.get('dias', default=30, type=int)
-
-    res = query("""
-        SELECT fecha_registro, total_asistencias,
-            total_cancelaciones
-        FROM vw_kpi_tendencia_asistencias
-        WHERE fecha >= CURRENT_DATE - (%s || ' days')::INTERVAL
-        ORDER BY fecha ASC
-    """, (dias,), fetchall=True)
-
-    return jsonify({
-        "fechas": [r['fecha_registro'] for r in res],
-        "asistencias": [r['total_asistencias'] for r in res],
-        "cancelaciones": [r['total_cancelaciones'] for r in res]
-    })
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -92,11 +92,14 @@ CREATE TABLE terapeutas (
     nombre            VARCHAR(50)  NOT NULL,
     apellido_paterno  VARCHAR(50)  NOT NULL,
     apellido_materno  VARCHAR(50)  NOT NULL,
+    id_sexo           INTEGER      NOT NULL,
     id_especialidad   INTEGER      NOT NULL,
     telefono          VARCHAR(15),
     correo            VARCHAR(100) UNIQUE,
     observaciones     TEXT,
     FOREIGN KEY (id_especialidad) REFERENCES cat_especialidades(id_especialidad)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (id_sexo) REFERENCES cat_sexo(id_sexo)
         ON DELETE RESTRICT ON UPDATE CASCADE
 );
  

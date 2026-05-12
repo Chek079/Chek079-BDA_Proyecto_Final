@@ -1,5 +1,5 @@
 -- ============================================================
---  VIEWS
+--  VIEWS 
 -- ============================================================
 
 -- ── vw_dashboard_admin ────────────────────────────────────────
@@ -37,14 +37,32 @@ p.telefono,
 p.correo,
 p.direccion,
 p.diagnostico_principal,
-p.antecedentes_medicos
-FROM  pacientes p
-JOIN  cat_sexo cs ON cs.id_sexo = p.id_sexo;
+p.antecedentes_medicos,
+t.id_terapeuta as terapeuta
+FROM pacientes p
+JOIN cat_sexo cs ON cs.id_sexo = p.id_sexo
+JOIN paciente_terapeuta pt ON  p.id_paciente = pt.id_paciente
+JOIN terapeutas t ON pt.id_terapeuta = t.id_terapeuta;
 
 
 -- ── vw_terapeutas_completo ────────────────────────────────────
 DROP VIEW IF EXISTS vw_terapeutas_completo;
 CREATE VIEW vw_terapeutas_completo AS
+SELECT
+t.id_terapeuta,
+t.nombre,
+t.apellido_paterno,
+t.apellido_materno,
+t.nombre || ' ' || t.apellido_paterno AS nombre_completo,
+cs.nombre                                                   AS sexo,
+ce.nombre AS especialidad,
+t.telefono,
+t.correo,
+t.observaciones
+FROM terapeutas t
+JOIN cat_sexo cs ON cs.id_sexo = t.id_sexo
+JOIN cat_especialidades ce ON ce.id_especialidad = t.id_especialidad;
+
 SELECT
 t.id_terapeuta,
 t.nombre,
@@ -274,6 +292,10 @@ JOIN  sesiones  s ON s.id_sesion   = ps.id_sesion
 GROUP BY p.id_paciente, p.nombre, p.apellido_paterno
 ORDER BY porcentaje_asistencia DESC;
 
+
+-- ============================================================
+--  KPI
+-- ============================================================
 --── vw_kpi_tendencia_asistencias ────────────────────────────────────
 CREATE OR REPLACE VIEW vw_kpi_tendencia_asistencias AS
 SELECT 
@@ -284,3 +306,62 @@ SELECT
 FROM vw_sesiones_detalle
 GROUP BY fecha
 ORDER BY fecha ASC;
+
+-- ============================================================
+--  Graficas
+-- ============================================================
+-- Ver los estados de las sesiones
+DROP VIEW IF EXISTS vw_highcharts_estados_sesiones;
+CREATE VIEW vw_highcharts_estados_sesiones AS
+SELECT estado_sesion, COUNT(*) AS total
+FROM sesiones
+GROUP BY estado_sesion;
+
+-- Sesiones por terapeuta 
+DROP VIEW IF EXISTS vw_highcharts_sesiones_terapeuta;
+CREATE VIEW vw_highcharts_sesiones_terapeuta AS
+SELECT t.nombre || ' ' || t.apellido_paterno AS terapeuta, COUNT(ts.id_sesion) AS total_sesiones
+FROM terapeutas t JOIN terapeuta_sesion ts ON t.id_terapeuta = ts.id_terapeuta
+GROUP BY terapeuta
+ORDER BY total_sesiones DESC;
+
+-- Tipos de sesiones mas comunes
+DROP VIEW IF EXISTS vw_highcharts_tipos_sesion;
+CREATE VIEW vw_highcharts_tipos_sesion AS
+SELECT cts.nombre, COUNT(*) AS total
+FROM sesiones s
+JOIN cat_tipos_sesion cts ON s.id_tipo_sesion = cts.id_tipo_sesion
+GROUP BY cts.nombre;
+
+-- Evaluacion de dolor
+DROP VIEW IF EXISTS vw_highcharts_evolucion_dolor;
+CREATE VIEW vw_highcharts_evolucion_dolor AS
+SELECT fecha, ROUND(AVG(nivel_dolor), 2) AS dolor_promedio
+FROM evaluaciones_progreso
+GROUP BY fecha
+ORDER BY fecha;
+
+-- Evolucion de movilidad
+DROP VIEW IF EXISTS vw_highcharts_evolucion_movilidad;
+CREATE VIEW vw_highcharts_evolucion_movilidad AS
+SELECT fecha, ROUND(AVG(nivel_movilidad), 2) AS movilidad_promedio
+FROM evaluaciones_progreso
+GROUP BY fecha
+ORDER BY fecha;
+
+-- Sessiones por dia
+DROP VIEW IF EXISTS vw_highcharts_tendencia_sesiones;
+CREATE VIEW vw_highcharts_tendencia_sesiones AS
+SELECT fecha, COUNT(*) AS total
+FROM sesiones
+GROUP BY fecha
+ORDER BY fecha;
+
+-- Pacientes por sexo
+DROP VIEW IF EXISTS vw_highcharts_pacientes_sexo;
+CREATE VIEW vw_highcharts_pacientes_sexo AS
+SELECT cs.nombre, COUNT(*) AS total
+FROM pacientes p
+JOIN cat_sexo cs ON p.id_sexo = cs.id_sexo
+GROUP BY cs.nombre;
+

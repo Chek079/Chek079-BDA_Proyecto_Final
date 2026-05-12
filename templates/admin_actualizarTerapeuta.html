@@ -56,6 +56,15 @@
               <input class="form-control" type="text" name="apellido_materno" value="{{ terapeuta.apellido_materno }}">
             </div>
             <div class="form-group">
+              <label>Sexo</label>
+              <select name="sexo" class="form-control" required>
+                <option value="">Seleccione su sexo...</option>
+                <option value="1" {% if terapeuta.sexo == "MASCULINO" %}selected{% endif %}>Masculino</option>
+                <option value="2" {% if terapeuta.sexo == "FEMENINO" %}selected{% endif %}>Femenino</option>
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
               <label>Especialidad Médica</label>
 
               <select name="especialidad" required>
