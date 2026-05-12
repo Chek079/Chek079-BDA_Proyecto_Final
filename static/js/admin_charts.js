@@ -1,227 +1,173 @@
-document.addEventListener('DOMContentLoaded', function () {
-  cargarTendenciaAsistencias();
-  cargarEstadosSesiones();
-  cargarAsistenciaPacientes();
-  cargarSesionesTerapeuta();
-  cargarTiposSesion();
-  cargarEvolucionDolor();
-  cargarEvolucionMovilidad();
-  cargarTendenciaSesiones();
-});
+// admin_charts.js
+// Todas las gráficas leen de MongoDB via endpoints Flask /api/charts/
 
-function cargarTendenciaSesiones() {
-    fetch('/api/kpi/tendencia_sesiones')
-        .then(response => response.json())
-        .then(data => {
-            Highcharts.chart('tendenciaSesiones', {
-                chart: { type: 'area' },
-                title: { text: 'Tendencia de Sesiones' },
-                xAxis: { categories: data.fecha },
-                yAxis: {
-                    title: {
-                        text: 'Sesiones'
-                    }
-                },
-                series: [{
-                    name: 'Sesiones',
-                    data: data.total
-                }]
-            });
-
-        });
+// ─── Helper para fetch ────────────────────────────────────────
+async function fetchData(url) {
+    const res = await fetch(url);
+    return await res.json();
 }
 
-function cargarEvolucionMovilidad() {
-    fetch('/api/kpi/evolucion_movilidad')
-        .then(response => response.json())
-        .then(data => {
-            Highcharts.chart('evolucionMovilidad', {
-                chart: { type: 'spline' },
-                title: { text: 'Evolución de Movilidad' },
-                xAxis: { categories: data.fecha },
+// ─── 1. Tendencia de Asistencias (línea) ─────────────────────
+async function cargarTendenciaAsistencias() {
+    const datos = await fetchData('/api/charts/tendencia-sesiones');
+    const fechas = datos.map(d => d.fecha);
+    const totales = datos.map(d => d.total);
 
-                yAxis: {
-                    min: 0,
-                    max: 10,
-                    title: {
-                        text: 'Movilidad'
-                    }
-                },
-                series: [{
-                    name: 'Movilidad',
-                    data: data.movilidad_promedio
-                }]
-            });
-        });
-}
-
-function cargarEvolucionDolor() {
-    fetch('/api/kpi/evolucion_dolor')
-        .then(response => response.json())
-        .then(data => {
-            Highcharts.chart('evolucionDolor', {
-                chart: { type: 'line' },
-                title: { text: 'Evolución del Dolor' },
-                xAxis: { categories: data.fecha },
-
-                yAxis: {
-                    min: 0,
-                    max: 10,
-                    title: {
-                        text: 'Nivel de Dolor'
-                    }
-                },
-
-                series: [{
-                    name: 'Dolor',
-                    data: data.dolor_promedio
-                }]
-            });
-
-        });
-}
-
-function cargarTiposSesion() {
-    fetch('/api/kpi/tipos_sesion')
-        .then(response => response.json())
-        .then(data => {
-            const seriesData = data.nombre.map((nombre, index) => ({
-                name: nombre,
-                y: data.total[index]
-            }));
-
-            Highcharts.chart('tiposSesion', {
-                chart: { type: 'pie' },
-                title: { text: 'Tipos de Sesión' },
-                series: [{ name: 'Total', data: seriesData }]
-            });
-        });
-}
-
-function cargarSesionesTerapeuta() {
-    fetch('/api/kpi/sesiones_terapeuta')
-        .then(response => response.json())
-        .then(data => {
-
-            Highcharts.chart('sesionesTerapeuta', {
-                chart: { type: 'bar' },
-                title: { text: 'Sesiones por Terapeuta' },
-                xAxis: { categories: data.terapeuta },
-                yAxis: { title: { text: 'Sesiones' } },
-                series: [{
-                    name: 'Sesiones',
-                    data: data.total_sesiones
-                }]
-            });
-
-        });
-}
-
-function cargarAsistenciaPacientes() {
-    fetch('/api/kpi/asistencia_pacientes')
-        .then(response => response.json())
-        .then(data => {
-            Highcharts.chart('asistenciaPacientes', {
-                chart: { type: 'column' },
-                title: { text: 'Asistencia por Paciente' },
-                xAxis: { categories: data.paciente },
-                yAxis: {
-                    min: 0,
-                    max: 100,
-                    title: {
-                        text: 'Porcentaje'
-                    }
-                },
-
-                series: [{
-                    name: 'Asistencia',
-                    data: data.porcentaje_asistencia
-                }]
-            });
-        });
-}
-
-
-function cargarTendenciaAsistencias() {
-  const container = document.getElementById('tendenciaChart');
-  container.innerHTML = '<p>Cargando gráfica...</p>';
-  fetch('/api/kpi/tendencia-asistencias?dias=30') 
-    .then(response => {
-      if (!response.ok) { throw new Error(`HTTP Error: ${response.status}`); }
-      return response.json();
-    })
-    .then(data => {
-      Highcharts.chart('tendenciaChart', {
-        chart: { type: 'areaspline', backgroundColor: 'transparent' },
+    Highcharts.chart('tendenciaChart', {
+        chart: { type: 'line', backgroundColor: 'transparent' },
         title: { text: null },
-        xAxis: { categories: data.fechas, gridLineWidth: 0 },
-        yAxis: { title: { text: 'Número de Sesiones' }, allowDecimals: false },
-        tooltip: { shared: true },
+        xAxis: { categories: fechas, labels: { rotation: -45, style: { fontSize: '11px' } } },
+        yAxis: { title: { text: 'Sesiones' }, allowDecimals: false },
+        series: [{ name: 'Sesiones por día', data: totales, color: '#2563eb' }],
         credits: { enabled: false },
-
-        series: [
-          {
-            name: 'Asistencias',
-            data: data.asistencias,
-            color: '#2ecc71',
-            fillColor: {
-              linearGradient: [0, 0, 0, 300],
-              stops: [
-                [0, 'rgba(46, 204, 113, 0.3)'],
-                [1, 'rgba(46, 204, 113, 0)']
-              ]
-            }
-          },
-          {
-            name: 'Cancelaciones',
-            data: data.cancelaciones,
-            color: '#e74c3c',
-            fillColor: {
-              linearGradient: [0, 0, 0, 300],
-              stops: [
-                [0, 'rgba(231, 76, 60, 0.2)'],
-                [1, 'rgba(231, 76, 60, 0)']
-              ]
-            }
-          }
-        ]
-      });
-    })
-    .catch(err => {
-      console.error('Error cargando gráfica:', err);
-      container.innerHTML = `
-        <div class="alert alert-danger">
-          Error cargando datos de la gráfica
-        </div>
-      `;
+        legend: { enabled: false }
     });
 }
 
-function cargarEstadosSesiones() {
-  const container = document.getElementById('estadoSesionesChart');
-  container.innerHTML = '<p>Cargando gráfica...</p>';
-  fetch('/api/kpi/estados_sesiones')
-    .then(response => {
-      if (!response.ok) { throw new Error(`HTTP Error: ${response.status}`); }
-      return response.json();
-    })
+// ─── 2. Estados de Sesiones (dona) ───────────────────────────
+async function cargarEstadosSesiones() {
+    const datos = await fetchData('/api/charts/estados-sesiones');
+    const seriesData = datos.map(d => ({
+        name: d.estado_sesion,
+        y: parseInt(d.total)
+    }));
 
-    .then(data => {
-      Highcharts.chart('estadoSesionesChart', {
+    Highcharts.chart('estadoSesionesChart', {
         chart: { type: 'pie', backgroundColor: 'transparent' },
-        title: { text: 'Estados de Sesiones' },
-        credits: { enabled: false },
-        series: [{
-          name: 'Total',
-          colorByPoint: true,
-          data: data.estado_sesion.map((estado, index) => ({
-            name: estado,
-            y: data.total[index]
-          }))
-        }]
-      });
-    })
-    .catch(err => { console.error('Error cargando gráfica:', err);
-      container.innerHTML = ` <div class="alert alert-danger"> Error cargando datos de la gráfica </div> `;
+        title: { text: null },
+        plotOptions: {
+            pie: {
+                innerSize: '50%',
+                dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.percentage:.1f}%' }
+            }
+        },
+        series: [{ name: 'Sesiones', colorByPoint: true, data: seriesData }],
+        colors: ['#2563eb', '#16a34a', '#d97706', '#dc2626'],
+        credits: { enabled: false }
     });
 }
+
+// ─── 3. Asistencia por Paciente (barras) ─────────────────────
+async function cargarAsistenciaPacientes() {
+    const datos = await fetchData('/api/charts/asistencia-pacientes');
+    const nombres   = datos.map(d => d.paciente);
+    const asistidas = datos.map(d => parseInt(d.sesiones_asistidas));
+    const faltadas  = datos.map(d => parseInt(d.sesiones_faltadas));
+
+    Highcharts.chart('asistenciaPacientes', {
+        chart: { type: 'bar', backgroundColor: 'transparent' },
+        title: { text: null },
+        xAxis: { categories: nombres },
+        yAxis: { title: { text: 'Sesiones' }, allowDecimals: false },
+        series: [
+            { name: 'Asistidas', data: asistidas, color: '#16a34a' },
+            { name: 'Faltas',    data: faltadas,  color: '#dc2626' }
+        ],
+        credits: { enabled: false }
+    });
+}
+
+// ─── 4. Tendencia por Sesión (área) ──────────────────────────
+async function cargarTendenciaSesiones() {
+    const datos  = await fetchData('/api/charts/tendencia-sesiones');
+    const fechas = datos.map(d => d.fecha);
+    const totales = datos.map(d => parseInt(d.total));
+
+    Highcharts.chart('tendenciaSesiones', {
+        chart: { type: 'area', backgroundColor: 'transparent' },
+        title: { text: null },
+        xAxis: { categories: fechas, labels: { rotation: -45, style: { fontSize: '11px' } } },
+        yAxis: { title: { text: 'Sesiones' }, allowDecimals: false },
+        series: [{
+            name: 'Sesiones',
+            data: totales,
+            color: '#0d9488',
+            fillOpacity: 0.2
+        }],
+        credits: { enabled: false },
+        legend: { enabled: false }
+    });
+}
+
+// ─── 5. Evolución Movilidad (línea) ──────────────────────────
+async function cargarEvolucionMovilidad() {
+    const datos  = await fetchData('/api/charts/evolucion-movilidad');
+    const fechas = datos.map(d => d.fecha);
+    const valores = datos.map(d => parseFloat(d.movilidad_promedio));
+
+    Highcharts.chart('evolucionMovilidad', {
+        chart: { type: 'line', backgroundColor: 'transparent' },
+        title: { text: null },
+        xAxis: { categories: fechas, labels: { rotation: -45, style: { fontSize: '11px' } } },
+        yAxis: { title: { text: 'Nivel (0-10)' }, min: 0, max: 10 },
+        series: [{ name: 'Movilidad promedio', data: valores, color: '#16a34a' }],
+        credits: { enabled: false },
+        legend: { enabled: false }
+    });
+}
+
+// ─── 6. Evolución Dolor (línea) ──────────────────────────────
+async function cargarEvolucionDolor() {
+    const datos  = await fetchData('/api/charts/evolucion-dolor');
+    const fechas = datos.map(d => d.fecha);
+    const valores = datos.map(d => parseFloat(d.dolor_promedio));
+
+    Highcharts.chart('evolucionDolor', {
+        chart: { type: 'line', backgroundColor: 'transparent' },
+        title: { text: null },
+        xAxis: { categories: fechas, labels: { rotation: -45, style: { fontSize: '11px' } } },
+        yAxis: { title: { text: 'Nivel (0-10)' }, min: 0, max: 10 },
+        series: [{ name: 'Dolor promedio', data: valores, color: '#dc2626' }],
+        credits: { enabled: false },
+        legend: { enabled: false }
+    });
+}
+
+// ─── 7. Tipos de Sesión (pastel) ─────────────────────────────
+async function cargarTiposSesion() {
+    const datos = await fetchData('/api/charts/tipos-sesion');
+    const seriesData = datos.map(d => ({
+        name: d.nombre,
+        y: parseInt(d.total)
+    }));
+
+    Highcharts.chart('tiposSesion', {
+        chart: { type: 'pie', backgroundColor: 'transparent' },
+        title: { text: null },
+        plotOptions: {
+            pie: { dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.y}' } }
+        },
+        series: [{ name: 'Sesiones', colorByPoint: true, data: seriesData }],
+        colors: ['#2563eb', '#0d9488', '#d97706'],
+        credits: { enabled: false }
+    });
+}
+
+// ─── 8. Sesiones por Terapeuta (columnas) ────────────────────
+async function cargarSesionesTerapeuta() {
+    const datos = await fetchData('/api/charts/sesiones-terapeuta');
+    const nombres = datos.map(d => d.terapeuta);
+    const totales = datos.map(d => parseInt(d.total_sesiones));
+
+    Highcharts.chart('sesionesTerapeuta', {
+        chart: { type: 'column', backgroundColor: 'transparent' },
+        title: { text: null },
+        xAxis: { categories: nombres },
+        yAxis: { title: { text: 'Sesiones' }, allowDecimals: false },
+        series: [{ name: 'Sesiones', data: totales, color: '#2563eb' }],
+        credits: { enabled: false },
+        legend: { enabled: false }
+    });
+}
+
+// ─── Cargar todas las gráficas al cargar la página ────────────
+document.addEventListener('DOMContentLoaded', () => {
+    cargarTendenciaAsistencias();
+    cargarEstadosSesiones();
+    cargarAsistenciaPacientes();
+    cargarTendenciaSesiones();
+    cargarEvolucionMovilidad();
+    cargarEvolucionDolor();
+    cargarTiposSesion();
+    cargarSesionesTerapeuta();
+});

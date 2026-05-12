@@ -138,7 +138,18 @@ def call_procedure_out(sql, params=None):
     finally:
         cur.close()
         conn.close()
- 
+
+
+def sync_mongo_async():
+    """Sincroniza MongoDB en background sin bloquear Flask"""
+    import threading
+    import subprocess
+    t = threading.Thread(target=lambda: subprocess.run(['python3', 'sync_mongo.py']))
+    t.daemon = True
+    t.start()
+
+
+
 # ─── DECORADORES ──────────────────────────────────────────────────────────────
 def login_required(f):
     @wraps(f)
