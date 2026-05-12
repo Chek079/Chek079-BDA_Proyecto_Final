@@ -1,5 +1,7 @@
 CREATE DATABASE rehabilitacion_fisica;
 \c rehabilitacion_fisica;
+
+CREATE USER rehabilitacion_user WITH PASSWORD '666';
  
  
 -- ============================================================
