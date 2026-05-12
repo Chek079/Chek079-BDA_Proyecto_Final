@@ -938,8 +938,8 @@ def clinica_expedientePaciente():
             FROM paciente_evaluacion pe
             JOIN evaluaciones_progreso ep
                 ON ep.id_evaluacion = pe.id_evaluacion
-            WHERE pe.id_paciente = %s
-            ORDER BY ep.fecha DESC;
+            WHERE pe.id_paciente = %1
+            ORDER BY ep.fecha DESC
         """, (id_paciente,), fetchall=True)
 
         # ============================================================
@@ -1054,39 +1054,102 @@ def publica_dashboard():
     id_paciente = session.get('ref_id')
     try:
         paciente = query(
-            "SELECT nombre || ' ' || apellido_paterno AS nombre, diagnostico_principal AS diagnostico FROM pacientes WHERE id_paciente = %s",
-            (id_paciente,), fetchone=True
+            """
+            SELECT
+                nombre || ' ' || apellido_paterno AS nombre,
+                diagnostico_principal AS diagnostico
+            FROM pacientes
+            WHERE id_paciente = %s
+            """,
+            (id_paciente,),
+            fetchone=True
         )
+
         proxima = query(
-            """SELECT s.fecha, s.hora_inicio FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               WHERE ps.id_paciente = %s AND s.fecha >= CURRENT_DATE
-               ORDER BY s.fecha, s.hora_inicio LIMIT 1""",
-            (id_paciente,), fetchone=True
+            """
+            SELECT
+                s.fecha,
+                s.hora_inicio
+            FROM paciente_sesion ps
+            JOIN sesiones s ON s.id_sesion = ps.id_sesion
+            WHERE ps.id_paciente = %s
+            AND s.fecha >= CURRENT_DATE
+            ORDER BY s.fecha, s.hora_inicio
+            LIMIT 1
+            """,
+            (id_paciente,),
+            fetchone=True
         )
+
         ultima = query(
-            """SELECT s.fecha, s.hora_inicio FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               WHERE ps.id_paciente = %s AND s.fecha < CURRENT_DATE
-               ORDER BY s.fecha DESC LIMIT 1""",
-            (id_paciente,), fetchone=True
+            """
+            SELECT
+                s.fecha,
+                s.hora_inicio,
+                s.observaciones_clinicas
+            FROM paciente_sesion ps
+            JOIN sesiones s ON s.id_sesion = ps.id_sesion
+            WHERE ps.id_paciente = %s
+            AND s.fecha < CURRENT_DATE
+            ORDER BY s.fecha DESC, s.hora_inicio DESC
+            LIMIT 1
+            """,
+            (id_paciente,),
+            fetchone=True
         )
+
         ejercicios = query(
-            """SELECT DISTINCT e.nombre_ejercicio, e.descripcion, nd.nombre AS dificultad
-               FROM   ejercicio_sesion_detalle esd
-               JOIN   sesiones s ON s.id_sesion = esd.id_sesion
-               JOIN   paciente_sesion ps ON ps.id_sesion = s.id_sesion
-               JOIN   ejercicios e ON e.id_ejercicio = esd.id_ejercicio
-               JOIN   cat_nivel_dificultad nd ON nd.id_nivel = e.id_nivel_dificultad
-               WHERE  ps.id_paciente = %s""",
-            (id_paciente,), fetchall=True
+            """
+            SELECT DISTINCT
+                e.nombre_ejercicio,
+                e.descripcion,
+                nd.nombre AS dificultad
+            FROM ejercicio_sesion_detalle esd
+            JOIN sesiones s ON s.id_sesion = esd.id_sesion
+            JOIN paciente_sesion ps ON ps.id_sesion = s.id_sesion
+            JOIN ejercicios e ON e.id_ejercicio = esd.id_ejercicio
+            JOIN cat_nivel_dificultad nd ON nd.id_nivel = e.id_nivel_dificultad
+            WHERE ps.id_paciente = %s
+            """,
+            (id_paciente,),
+            fetchall=True
         )
-    except Exception:
-        paciente = proxima = ultima = None
+
+        progreso_chart = query(
+            """
+            SELECT
+                TO_CHAR(s.fecha, 'DD/MM') AS fecha,
+                ep.nivel_movilidad,
+                ep.resistencia,
+                ep.nivel_dolor
+            FROM evaluaciones_progreso ep
+            JOIN sesiones s ON s.id_sesion = ep.id_evaluacion
+            JOIN paciente_sesion ps ON ps.id_sesion = s.id_sesion
+            WHERE ps.id_paciente = %s
+            ORDER BY s.fecha
+            """,
+            (id_paciente,),
+            fetchall=True
+        )
+
+    except Exception as e:
+
+        print(f'Error dashboard paciente: {e}')
+
+        paciente = None
+        proxima = None
+        ultima = None
         ejercicios = []
-    return render_template('publica_dashboard.html',
-                           paciente=paciente, proxima_sesion=proxima,
-                           ultima_sesion=ultima, ejercicios=ejercicios or [])
+        progreso_chart = []
+
+    return render_template(
+            'publica_dashboard.html',
+            paciente=paciente,
+            proxima_sesion=proxima,
+            ultima_sesion=ultima,
+            ejercicios_actuales=ejercicios or [],
+            progreso_chart=progreso_chart or []
+        )
 
 @app.route('/paciente/sesiones')
 @login_required
@@ -1095,13 +1158,13 @@ def publica_sesiones():
     id_paciente = session.get('ref_id')
     try:
         paciente = query(
-            "SELECT nombre || ' ' || apellido_paterno AS nombre, diagnostico_principal AS diagnostico FROM pacientes WHERE id_paciente = %s",
-            (id_paciente,), fetchone=True
-        )
+                "SELECT nombre || ' ' || apellido_paterno AS nombre, diagnostico_principal AS diagnostico FROM pacientes WHERE id_paciente = %s",
+                (id_paciente,), fetchone=True
+                )
         historial_paciente = query(
-            "SELECT * FROM vw_historial_paciente WHERE id_paciente = %s ORDER BY fecha_raw DESC",
-            (id_paciente,), fetchall=True
-        )
+                "SELECT * FROM vw_historial_paciente WHERE id_paciente = %s ORDER BY fecha_raw DESC",
+                (id_paciente,), fetchall=True
+                )
     except Exception:
         paciente, historial_paciente = None, []
     return render_template('publica_sesiones.html',
@@ -1116,35 +1179,35 @@ def publica_paciente():
     id_paciente = session.get('ref_id')
     try:
         paciente = query(
-            "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
-            (id_paciente,), fetchone=True
-        )
+                "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
+                (id_paciente,), fetchone=True
+                )
         proxima_sesion = query(
-            """SELECT s.fecha, s.hora_inicio, ts.nombre AS tipo_sesion
-               FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
-               WHERE ps.id_paciente = %s AND s.fecha >= CURRENT_DATE
-               ORDER BY s.fecha, s.hora_inicio LIMIT 1""",
-            (id_paciente,), fetchone=True
-        )
+                """SELECT s.fecha, s.hora_inicio, ts.nombre AS tipo_sesion
+                FROM paciente_sesion ps
+                JOIN sesiones s ON s.id_sesion = ps.id_sesion
+                JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+                WHERE ps.id_paciente = %s AND s.fecha >= CURRENT_DATE
+                ORDER BY s.fecha, s.hora_inicio LIMIT 1""",
+                (id_paciente,), fetchone=True
+                )
         ultima_sesion = query(
-            """SELECT s.fecha, s.hora_inicio, ts.nombre AS tipo_sesion
-               FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
-               WHERE ps.id_paciente = %s AND s.fecha < CURRENT_DATE
-               ORDER BY s.fecha DESC LIMIT 1""",
-            (id_paciente,), fetchone=True
-        )
+                """SELECT s.fecha, s.hora_inicio, ts.nombre AS tipo_sesion
+                FROM paciente_sesion ps
+                JOIN sesiones s ON s.id_sesion = ps.id_sesion
+                JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+                WHERE ps.id_paciente = %s AND s.fecha < CURRENT_DATE
+                ORDER BY s.fecha DESC LIMIT 1""",
+                (id_paciente,), fetchone=True
+                )
         medicamentos = query(
-            "SELECT medicamento_actual FROM paciente_medicamento WHERE id_paciente = %s",
-            (id_paciente,), fetchall=True
-        )
+                "SELECT medicamento_actual FROM paciente_medicamento WHERE id_paciente = %s",
+                (id_paciente,), fetchall=True
+                )
     except Exception:
         paciente = proxima_sesion = ultima_sesion = None
-        medicamentos = []
-    return render_template('publica_paciente.html',
+        medicamentos = [] 
+        return render_template('publica_paciente.html',
                            paciente=paciente,
                            proxima_sesion=proxima_sesion,
                            ultima_sesion=ultima_sesion,
@@ -1164,49 +1227,49 @@ def expedientePaciente():
         return redirect(url_for('publica_dashboard'))
     try:
         paciente = query(
-            "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
-            (id_paciente,), fetchone=True
-        )
+                "SELECT * FROM vw_expediente_paciente WHERE id_paciente = %s",
+                (id_paciente,), fetchone=True
+                )
         proxima_sesion = query(
-            """SELECT s.fecha, s.hora_inicio, s.hora_fin, ts.nombre AS tipo_sesion
-               FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
-               WHERE ps.id_paciente = %s AND s.fecha >= CURRENT_DATE
-               ORDER BY s.fecha, s.hora_inicio LIMIT 1""",
-            (id_paciente,), fetchone=True
-        )
+                """SELECT s.fecha, s.hora_inicio, s.hora_fin, ts.nombre AS tipo_sesion
+                FROM paciente_sesion ps
+                JOIN sesiones s ON s.id_sesion = ps.id_sesion
+                JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+                WHERE ps.id_paciente = %s AND s.fecha >= CURRENT_DATE
+                ORDER BY s.fecha, s.hora_inicio LIMIT 1""",
+                (id_paciente,), fetchone=True
+                )
         ultima_sesion = query(
-            """SELECT s.fecha, s.hora_inicio, s.hora_fin,
-                      s.asistencia, s.observaciones_clinicas,
-                      ts.nombre AS tipo_sesion
-               FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
-               WHERE ps.id_paciente = %s AND s.fecha < CURRENT_DATE
-               ORDER BY s.fecha DESC LIMIT 1""",
-            (id_paciente,), fetchone=True
-        )
+                """SELECT s.fecha, s.hora_inicio, s.hora_fin,
+                s.asistencia, s.observaciones_clinicas,
+                ts.nombre AS tipo_sesion
+                FROM paciente_sesion ps
+                JOIN sesiones s ON s.id_sesion = ps.id_sesion
+                JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+                WHERE ps.id_paciente = %s AND s.fecha < CURRENT_DATE
+                ORDER BY s.fecha DESC LIMIT 1""",
+                (id_paciente,), fetchone=True
+                )
         ejercicios_actuales = query(
-            """SELECT DISTINCT e.nombre_ejercicio, esd.repeticiones, esd.duracion_min
-               FROM ejercicio_sesion_detalle esd
-               JOIN sesiones s ON s.id_sesion = esd.id_sesion
-               JOIN paciente_sesion ps ON ps.id_sesion = s.id_sesion
-               JOIN ejercicios e ON e.id_ejercicio = esd.id_ejercicio
-               WHERE ps.id_paciente = %s
-               ORDER BY e.nombre_ejercicio""",
-            (id_paciente,), fetchall=True
-        )
+                """SELECT DISTINCT e.nombre_ejercicio, esd.repeticiones, esd.duracion_min
+                FROM ejercicio_sesion_detalle esd
+                JOIN sesiones s ON s.id_sesion = esd.id_sesion
+                JOIN paciente_sesion ps ON ps.id_sesion = s.id_sesion
+                JOIN ejercicios e ON e.id_ejercicio = esd.id_ejercicio
+                WHERE ps.id_paciente = %s
+                ORDER BY e.nombre_ejercicio""",
+                (id_paciente,), fetchall=True
+                )
         sesiones_anteriores = query(
-            """SELECT s.fecha, s.hora_inicio, s.asistencia,
-                      s.observaciones_clinicas, ts.nombre AS tipo_sesion
-               FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
-               WHERE ps.id_paciente = %s
-               ORDER BY s.fecha DESC LIMIT 10""",
-            (id_paciente,), fetchall=True
-        )
+                """SELECT s.fecha, s.hora_inicio, s.asistencia,
+                s.observaciones_clinicas, ts.nombre AS tipo_sesion
+                FROM paciente_sesion ps
+                JOIN sesiones s ON s.id_sesion = ps.id_sesion
+                JOIN cat_tipos_sesion ts ON ts.id_tipo_sesion = s.id_tipo_sesion
+                WHERE ps.id_paciente = %s
+                ORDER BY s.fecha DESC LIMIT 10""",
+                (id_paciente,), fetchall=True
+                )
     except Exception:
         paciente = proxima_sesion = ultima_sesion = None
         ejercicios_actuales = sesiones_anteriores = []
@@ -1244,9 +1307,9 @@ def nfc_registrar():
     try:
         # Buscar paciente por UID del keyfob
         paciente = query(
-            "SELECT id_paciente, nombre || ' ' || apellido_paterno AS nombre_completo FROM pacientes WHERE nfc_uid = %s",
-            (uid,), fetchone=True
-        )
+                "SELECT id_paciente, nombre || ' ' || apellido_paterno AS nombre_completo FROM pacientes WHERE nfc_uid = %s",
+                (uid,), fetchone=True
+                )
         if not paciente:
             return jsonify({'success': False, 'mensaje': f'Tarjeta no registrada. UID: {uid}'})
 
@@ -1255,12 +1318,12 @@ def nfc_registrar():
 
         # Buscar sesión de hoy para ese paciente
         sesion = query(
-            """SELECT s.id_sesion FROM paciente_sesion ps
-               JOIN sesiones s ON s.id_sesion = ps.id_sesion
-               WHERE ps.id_paciente = %s AND s.fecha = CURRENT_DATE
-               ORDER BY s.hora_inicio LIMIT 1""",
-            (id_paciente,), fetchone=True
-        )
+                """SELECT s.id_sesion FROM paciente_sesion ps
+                JOIN sesiones s ON s.id_sesion = ps.id_sesion
+                WHERE ps.id_paciente = %s AND s.fecha = CURRENT_DATE
+                ORDER BY s.hora_inicio LIMIT 1""",
+                (id_paciente,), fetchone=True
+                )
         if not sesion:
             return jsonify({'success': False, 'mensaje': f'{nombre} no tiene sesión para hoy.'})
 
@@ -1268,9 +1331,9 @@ def nfc_registrar():
 
         # Verificar que no esté ya registrado
         ya_registrado = query(
-            "SELECT 1 FROM asistencias_nfc WHERE id_paciente = %s AND id_sesion = %s",
-            (id_paciente, id_sesion), fetchone=True
-        )
+                "SELECT 1 FROM asistencias_nfc WHERE id_paciente = %s AND id_sesion = %s",
+                (id_paciente, id_sesion), fetchone=True
+                )
         if ya_registrado:
             return jsonify({'success': False, 'mensaje': f'{nombre} ya tiene asistencia registrada.'})
 
@@ -1279,12 +1342,12 @@ def nfc_registrar():
         fecha_hoy  = datetime.now().strftime('%Y-%m-%d')
 
         query(
-            """INSERT INTO asistencias_nfc
-               (id_paciente, id_sesion, fecha, hora_entrada, asistencia_confirmada, id_dispositivo)
-               VALUES (%s, %s, %s::DATE, %s::TIME, TRUE, 1)""",
-            (id_paciente, id_sesion, fecha_hoy, hora_ahora),
-            commit=True
-        )
+                """INSERT INTO asistencias_nfc
+                (id_paciente, id_sesion, fecha, hora_entrada, asistencia_confirmada, id_dispositivo)
+                VALUES (%s, %s, %s::DATE, %s::TIME, TRUE, 1)""",
+                (id_paciente, id_sesion, fecha_hoy, hora_ahora),
+                commit=True
+                )
 
         return jsonify({
             'success':   True,
@@ -1292,7 +1355,7 @@ def nfc_registrar():
             'paciente':  nombre,
             'id_sesion': id_sesion,
             'hora':      hora_ahora
-        })
+            })
 
     except Exception as e:
         return jsonify({'success': False, 'mensaje': f'Error: {e}'})
@@ -1305,18 +1368,18 @@ def api_tendencia_asistencias():
     dias = request.args.get('dias', default=30, type=int)
 
     res = query("""
-        SELECT fecha_registro, total_asistencias,
-            total_cancelaciones
-        FROM vw_kpi_tendencia_asistencias
-        WHERE fecha >= CURRENT_DATE - (%s || ' days')::INTERVAL
-        ORDER BY fecha ASC
-    """, (dias,), fetchall=True)
+                SELECT fecha_registro, total_asistencias,
+                total_cancelaciones
+                FROM vw_kpi_tendencia_asistencias
+                WHERE fecha >= CURRENT_DATE - (%s || ' days')::INTERVAL
+                ORDER BY fecha ASC
+                """, (dias,), fetchall=True)
 
     return jsonify({
         "fechas": [r['fecha_registro'] for r in res],
         "asistencias": [r['total_asistencias'] for r in res],
         "cancelaciones": [r['total_cancelaciones'] for r in res]
-    })
+        })
 
 @app.route('/api/kpi/estados_sesiones')
 @login_required
@@ -1337,32 +1400,32 @@ def api_estados_sesiones():
 @role_required('admin')
 def api_asistencia_pacientes():
     res = query("""
-        SELECT
-            paciente,
-            porcentaje_asistencia
-        FROM vw_reporte_asistencia;
-    """, fetchall=True)
+                SELECT
+                paciente,
+                porcentaje_asistencia
+                FROM vw_reporte_asistencia;
+                """, fetchall=True)
 
     return jsonify({
         "paciente": [row["paciente"] for row in res],
         "porcentaje_asistencia": [float(row["porcentaje_asistencia"]) for row in res]
-    })
+        })
 
 @app.route('/api/kpi/sesiones_terapeuta')
 @login_required
 @role_required('admin')
 def api_sesiones_terapeuta():
     res = query("""
-        SELECT
-            terapeuta,
-            total_sesiones
-        FROM vw_highcharts_sesiones_terapeuta;
-    """, fetchall=True)
+                SELECT
+                terapeuta,
+                total_sesiones
+                FROM vw_highcharts_sesiones_terapeuta;
+                """, fetchall=True)
 
     return jsonify({
         "terapeuta": [row["terapeuta"] for row in res],
         "total_sesiones": [row["total_sesiones"] for row in res]
-    })
+        })
 
 @app.route('/api/kpi/tipos_sesion')
 @login_required
@@ -1370,16 +1433,16 @@ def api_sesiones_terapeuta():
 def api_tipos_sesion():
 
     res = query("""
-        SELECT
-            nombre,
-            total
-        FROM vw_highcharts_tipos_sesion;
-    """, fetchall=True)
+                SELECT
+                nombre,
+                total
+                FROM vw_highcharts_tipos_sesion;
+                """, fetchall=True)
 
     return jsonify({
         "nombre": [row["nombre"] for row in res],
         "total": [row["total"] for row in res]
-    })
+        })
 
 @app.route('/api/kpi/evolucion_dolor')
 @login_required
@@ -1387,62 +1450,62 @@ def api_tipos_sesion():
 def api_evolucion_dolor():
 
     res = query("""
-        SELECT
-            fecha,
-            dolor_promedio
-        FROM vw_highcharts_evolucion_dolor;
-    """, fetchall=True)
+                SELECT
+                fecha,
+                dolor_promedio
+                FROM vw_highcharts_evolucion_dolor;
+                """, fetchall=True)
 
     return jsonify({
         "fecha": [str(row["fecha"]) for row in res],
         "dolor_promedio": [float(row["dolor_promedio"]) for row in res]
-    })
+        })
 
 @app.route('/api/kpi/evolucion_movilidad')
 @login_required
 @role_required('admin')
 def api_evolucion_movilidad():
     res = query("""
-        SELECT
-            fecha,
-            movilidad_promedio
-        FROM vw_highcharts_evolucion_movilidad;
-    """, fetchall=True)
+                SELECT
+                fecha,
+                movilidad_promedio
+                FROM vw_highcharts_evolucion_movilidad;
+                """, fetchall=True)
 
     return jsonify({
         "fecha": [str(row["fecha"]) for row in res],
         "movilidad_promedio": [float(row["movilidad_promedio"]) for row in res]
-    })
+        })
 
 @app.route('/api/kpi/tendencia_sesiones')
 @login_required
 @role_required('admin')
 def api_tendencia_sesiones():
     res = query("""
-        SELECT
-            fecha,
-            total
-        FROM vw_highcharts_tendencia_sesiones;
-    """, fetchall=True)
+                SELECT
+                fecha,
+                total
+                FROM vw_highcharts_tendencia_sesiones;
+                """, fetchall=True)
 
     return jsonify({
         "fecha": [str(row["fecha"]) for row in res],
         "total": [row["total"] for row in res]
-    })
+        })
 
 @app.route('/api/kpi/tendencia_sexo')
 @login_required
 @role_required('admin')
 def api_tendencia_sexo():
     res = query("""
-        SELECT nombre, total
-        FROM vw_highcharts_pacientes_sexo;
-    """, fetchall=True)
+                SELECT nombre, total
+                FROM vw_highcharts_pacientes_sexo;
+                """, fetchall=True)
 
     return jsonify({
         "nombre": [str(row["nombre"]) for row in res],
         "total": [row["total"] for row in res]
-    })
+        })
 
 if __name__ == "__main__":
     app.run(debug=True)
