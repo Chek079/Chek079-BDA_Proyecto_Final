@@ -224,58 +224,42 @@ def admin_dashboard():
 
     try:
         kpi = {
-            "pacientes_activos": query("""
-                SELECT COUNT(DISTINCT id_paciente) AS total
-                FROM paciente_sesion;
-            """, fetchone=True)["total"],
+                "pacientes_activos": query("""
+                                           SELECT total FROM vw_kpi_pacientes_activos;
+                                           """, fetchone=True)["total"],
 
-            "sesiones_hoy": query("""
-                SELECT COUNT(*) AS total
-                FROM sesiones
-                WHERE fecha = CURRENT_DATE;
-            """, fetchone=True)["total"],
+                "sesiones_hoy": query("""
+                                      SELECT total FROM vw_kpi_sesiones_hoy;
+                                      """, fetchone=True)["total"],
 
-            "tasa_aderencia": query("""
-                SELECT ROUND( ( COUNT( CASE WHEN asistencia = TRUE THEN 1 END)::DECIMAL / NULLIF(COUNT(*), 0)) * 100, 2
-                ) AS total
-                FROM sesiones;
-            """, fetchone=True)["total"],
+                "tasa_aderencia": query("""
+                                        SELECT total FROM vw_kpi_tasa_aderencia;
+                                        """, fetchone=True)["total"],
 
-            "efectividad_promedio": query(""" SELECT ROUND( AVG( ( nivel_movilidad + resistencia + (10 - nivel_dolor)) / 3.0), 2) AS total
-                FROM evaluaciones_progreso;
-            """, fetchone=True)["total"],
+                "efectividad_promedio": query("""
+                                              SELECT total FROM vw_kpi_efectividad_promedio;
+                                              """, fetchone=True)["total"],
 
-            "sesiones_finalizadas": query("""
-                SELECT COUNT(*) AS total
-                FROM sesiones
-                WHERE estado_sesion = 'FINALIZADA';
-            """, fetchone=True)["total"],
+                "sesiones_finalizadas": query("""
+                                              SELECT total FROM vw_kpi_sesiones_finalizadas;
+                                              """, fetchone=True)["total"],
 
-            "sesiones_en_curso": query("""
-                SELECT COUNT(*) AS total
-                FROM sesiones
-                WHERE estado_sesion = 'EN_CURSO';
-            """, fetchone=True)["total"],
+                "sesiones_en_curso": query("""
+                                           SELECT total FROM vw_kpi_sesiones_en_curso;
+                                           """, fetchone=True)["total"],
 
-            "pacientes_unicos": query("""
-                SELECT COUNT(*) AS total
-                FROM pacientes;
-            """, fetchone=True)["total"],
+                "pacientes_unicos": query("""
+                                          SELECT total FROM vw_kpi_pacientes_unicos;
+                                          """, fetchone=True)["total"],
 
-            "terapeutas_activos": query("""
-                SELECT COUNT(*) AS total
-                FROM usuarios
-                WHERE rol = 'terapeuta'
-                AND activo = TRUE;
-            """, fetchone=True)["total"],
+                "terapeutas_activos": query("""
+                                            SELECT total FROM vw_kpi_terapeutas_activos;
+                                            """, fetchone=True)["total"],
 
-            "tiempo_promedio_sesion": query("""
-                SELECT ROUND( AVG( EXTRACT( EPOCH FROM ( hora_fin_real - hora_inicio_real)) / 60), 2) AS total
-                FROM sesiones
-                WHERE hora_inicio_real IS NOT NULL
-                AND hora_fin_real IS NOT NULL;
-            """, fetchone=True)["total"]
-        }
+                "tiempo_promedio_sesion": query("""
+                                                SELECT total FROM vw_kpi_tiempo_promedio_sesion;
+                                                """, fetchone=True)["total"]
+                }
 
         nfc_recientes = query("""
             SELECT

@@ -365,3 +365,60 @@ FROM pacientes p
 JOIN cat_sexo cs ON p.id_sexo = cs.id_sexo
 GROUP BY cs.nombre;
 
+
+-- KPI
+
+DROP VIEW IF EXISTS vw_kpi_pacientes_activos;
+CREATE VIEW vw_kpi_pacientes_activos AS
+SELECT COUNT(DISTINCT id_paciente) AS total
+FROM paciente_sesion;
+
+DROP VIEW IF EXISTS vw_kpi_sesiones_hoy;
+CREATE VIEW vw_kpi_sesiones_hoy AS
+SELECT COUNT(*) AS total
+FROM sesiones
+WHERE fecha = CURRENT_DATE;
+
+DROP VIEW IF EXISTS vw_kpi_tasa_aderencia;
+CREATE VIEW vw_kpi_tasa_aderencia AS
+SELECT ROUND( ( COUNT( CASE WHEN asistencia = TRUE THEN 1 END)::DECIMAL / NULLIF(COUNT(*), 0)) * 100, 2
+  ) AS total
+FROM sesiones;
+
+DROP VIEW IF EXISTS vw_kpi_efectividad_promedio;
+CREATE VIEW vw_kpi_efectividad_promedio AS
+SELECT ROUND( AVG( ( nivel_movilidad + resistencia + (10 - nivel_dolor)) / 3.0), 2) AS total
+FROM evaluaciones_progreso;
+
+DROP VIEW IF EXISTS vw_kpi_sesiones_finalizadas;
+CREATE VIEW vw_kpi_sesiones_finalizadas AS
+SELECT COUNT(*) AS total
+FROM sesiones
+WHERE estado_sesion = 'FINALIZADA';
+
+DROP VIEW IF EXISTS vw_kpi_sesiones_en_curso;
+CREATE VIEW vw_kpi_sesiones_en_curso AS
+SELECT COUNT(*) AS total
+FROM sesiones
+WHERE estado_sesion = 'EN_CURSO';
+
+
+DROP VIEW IF EXISTS vw_kpi_pacientes_unicos;
+CREATE VIEW vw_kpi_pacientes_unicos AS
+SELECT COUNT(*) AS total
+FROM pacientes;
+
+
+DROP VIEW IF EXISTS vw_kpi_terapeutas_activos;
+CREATE VIEW vw_kpi_terapeutas_activos AS
+SELECT COUNT(*) AS total
+FROM usuarios
+WHERE rol = 'terapeuta'
+AND activo = TRUE;
+
+
+DROP VIEW IF EXISTS vw_kpi_tiempo_promedio_sesion;
+CREATE VIEW vw_kpi_tiempo_promedio_sesion AS
+SELECT ROUND( AVG( EXTRACT( EPOCH FROM ( hora_fin_real - hora_inicio_real)) / 60), 2) AS total
+FROM sesiones
+WHERE hora_inicio_real IS NOT NULL AND hora_fin_real IS NOT NULL;
