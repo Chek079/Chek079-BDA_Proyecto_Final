@@ -425,7 +425,3 @@ SELECT cs.nombre, COUNT(*) AS total
 FROM pacientes p
 JOIN cat_sexo cs ON p.id_sexo = cs.id_sexo
 GROUP BY cs.nombre;
-
-
--- KPI
-
