@@ -1,162 +1,164 @@
 <!DOCTYPE html>
 <html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesión Activa - Rehab IoT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/clinica_base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/clinica_expediente_sesion.css') }}">
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sesión Activa - Rehab IoT</title>
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
-  <link rel="stylesheet" href="{{url_for('static',filename='css/clinica_base.css')}}">
-  <link rel="stylesheet" href="{{url_for('static',filename='css/clinica_expediente_sesion.css')}}">
-</head>
-
-<body>
-
-  <!-- Inicio de sidebar-->
-  <nav class="sidebar">
-    <div class="sidebar-header">
-      <h1> Rehab IoT </h1>
-      <p style="font-size: 12px; color: var(--text-light); margin-top: 5px;">Portal Médico</p>
-    </div>
-    <ul class="nav-links">
-      <li><a href="{{url_for('clinica_dashboard')}}"><i class="fa-solid fa-calendar-day"></i> Mi Agenda
-          Hoy</a></li>
-      <li><a href="{{url_for('clinica_obtenerPacientes')}}"><i class="fa-solid fa-users"></i> Mis Pacientes</a></li>
-      <li><a href="{{url_for('clinica_obtenerSesiones')}}"><i class="fa-solid fa-file-medical"></i>
-          Historial
-          Sesiones</a></li>
-      <li><a href="{{url_for('clinica_expedienteSesion')}}" class="active"><i class="fa-solid fa-file-medical"></i>
-          Sesión Activa</a>
-      </li>
-      <li><a href="{{url_for('clinica_sesionesDomicilio')}}"><i class="fa-solid fa-house-chimney-user"></i> Terapias
-          Domicilio</a></li>
-      <li style="margin-top: auto;"><a href="{{url_for('principal')}}"><i
-            class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
-    </ul>
-  </nav>
-  <!-- Fin de sidebar-->
-
-  <main class="main-content">
-
-    <div class="header-session">
-      <div class="patient-info">
-        <h2>{{ paciente.nombre | default('Ana López García') }}</h2>
-        <p>ID Paciente: <strong>{{ paciente.id_paciente | default('PAC-1042') }}</strong> | Edad: {{ paciente.edad |
-          default('45') }} años | Tipo de Terapia: {{ paciente.tipo_terapia | default('Física - Hombro') }}</p>
+  <body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h1>Rehab IoT</h1>
+        <p style="font-size:12px;color:var(--text-light);margin-top:5px;"> Portal Médico </p>
       </div>
-      <div class="nfc-badge">
-        <i class="fa-solid fa-nfc-symbol"></i> Identidad Verificada vía NFC
-      </div>
-    </div>
+      <ul class="nav-links">
+        <li> <a href="{{ url_for('clinica_dashboard') }}"> <i class="fa-solid fa-calendar-day"></i> Mi Agenda Hoy </a> </li>
+        <li> <a href="{{ url_for('clinica_obtenerPacientes') }}"> <i class="fa-solid fa-users"></i> Mis Pacientes </a> </li>
+        <li> <a href="{{ url_for('clinica_obtenerSesiones') }}"> <i class="fa-solid fa-file-medical"></i> Historial Sesiones </a> </li>
+        <li> <a href="{{ url_for('clinica_expedienteSesion') }}" class="active"> <i class="fa-solid fa-notes-medical"></i> Sesión Activa </a> </li>
+        <li> <a href="{{ url_for('clinica_sesionesDomicilio') }}"> <i class="fa-solid fa-house-chimney-user"></i> Terapias Domicilio </a> </li>
+        <li style="margin-top:auto;">
+          <a href="{{ url_for('logout') }}">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Cerrar Sesión
+          </a>
+        </li>
+      </ul>
+    </nav>
 
-    <div class="session-grid">
-
-      <div class="left-column">
-
-        <div class="card" style="border-top: 4px solid var(--danger-red);">
-          <h3 class="card-title" style="color: var(--danger-red);">
-            <i class="fa-solid fa-triangle-exclamation"></i> Alertas Médicas
-          </h3>
-
-          {% if paciente.alertas %}
-          {% for alerta in paciente.alertas %}
-          <div class="alert-box"><i class="fa-solid fa-ban"></i> {{ alerta }}</div>
-          {% endfor %}
-          {% else %}
-          <div class="alert-box"><i class="fa-solid fa-ban"></i> Alergia severa a electrodos de látex.</div>
-          <div class="alert-box"><i class="fa-solid fa-ban"></i> Marcapasos detectado (Evitar Magnetoterapia).</div>
-          {% endif %}
+    <!-- Main -->
+    <main class="main-content">
+      {% if paciente %}
+      <!-- Header -->
+      <div class="header-session">
+        <div class="patient-info">
+          <h2> {{ paciente.paciente_nombre }} </h2>
+          <p> ID: <strong>{{ paciente.id_paciente }}</strong> | Horario: {{ paciente.hora_inicio }} - {{ paciente.hora_fin }} </p>
+          <p style="margin-top:8px;"> <i class="fa-solid fa-phone"></i> {{ paciente.telefono or 'Sin teléfono' }} &nbsp;&nbsp; <i class="fa-solid fa-envelope"></i> {{ paciente.correo or 'Sin correo' }} </p>
         </div>
+        <div class="nfc-badge"> <i class="fa-solid fa-heart-pulse"></i> Sesión en Curso </div>
+      </div>
 
-        <div class="card">
-          <h3 class="card-title"><i class="fa-solid fa-stethoscope"></i> Condiciones Previas</h3>
-          <ul class="condition-list">
-            {% if paciente.condiciones %}
-            {% for condicion in paciente.condiciones %}
-            <li><i class="fa-solid fa-check" style="color: var(--primary-blue);"></i> {{ condicion }}</li>
-            {% endfor %}
+      <!-- Grid -->
+      <div class="session-grid">
+        <!-- Left -->
+        <div class="left-column">
+          <!-- Diagnóstico -->
+          <div class="card">
+            <h3 class="card-title"> <i class="fa-solid fa-stethoscope"></i> Diagnóstico Principal </h3>
+            <p> {{ paciente.diagnostico_principal or 'Sin diagnóstico registrado.' }} </p>
+          </div>
+          <!-- Antecedentes -->
+          <div class="card">
+            <h3 class="card-title"> <i class="fa-solid fa-triangle-exclamation"></i> Antecedentes Médicos </h3>
+            <p> {{ paciente.antecedentes_medicos or 'Sin antecedentes registrados.' }} </p>
+          </div>
+
+          <!-- Dirección -->
+          <div class="card">
+            <h3 class="card-title"> <i class="fa-solid fa-location-dot"></i> Dirección </h3>
+            <p> {{ paciente.direccion or 'Sin dirección registrada.' }} </p>
+          </div>
+          <!-- Ejercicios -->
+          <div class="card">
+            <h3 class="card-title"> <i class="fa-solid fa-dumbbell"></i> Ejercicios Disponibles </h3>
+            {% if ejercicios %}
+            <ul class="condition-list">
+              {% for ejercicio in ejercicios %}
+              <li> {{ ejercicio.nombre_ejercicio }} </li>
+              {% endfor %}
+            </ul>
             {% else %}
-            <li><i class="fa-solid fa-check" style="color: var(--primary-blue);"></i> Hipertensión controlada.</li>
-            <li><i class="fa-solid fa-check" style="color: var(--primary-blue);"></i> Cirugía de manguito rotador (Hace
-              6 meses).</li>
+            <p> No hay ejercicios registrados. </p>
             {% endif %}
-          </ul>
+          </div>
         </div>
+        <!-- Right -->
+        <div class="right-column">
+          <div class="card" style="border-top:4px solid var(--accent-teal);">
+            <h3 class="card-title"> <i class="fa-solid fa-notes-medical"></i> Registro Clínico </h3>
+            <form action="{{ url_for('clinica_finalizarSesionReal', id_sesion=paciente.id_sesion) }}" method="POST">
+              <input type="hidden" name="id_paciente" value="{{ paciente.id_paciente }}">
 
-        <div class="card">
-          <h3 class="card-title"><i class="fa-solid fa-clipboard"></i> Notas del Expediente</h3>
-          <p style="font-size: 14px; color: var(--text-light); line-height: 1.6;">
-            {{ paciente.notas | default('La paciente presenta dolor en grado 6/10 al realizar abducción de hombro
-            superior a los 90 grados. Continuar con ejercicios de movilidad asistida.') }}
-          </p>
+              <!-- Movilidad -->
+              <div class="form-group">
+                <label for="nivel_movilidad"> Nivel de movilidad </label>
+                <input type="number" id="nivel_movilidad" name="nivel_movilidad" min="1" max="10" class="form-control" required>
+              </div>
+
+              <!-- Dolor -->
+              <div class="form-group">
+                <label for="nivel_dolor"> Nivel de dolor </label>
+                <input type="number" id="nivel_dolor" name="nivel_dolor" min="1" max="10" class="form-control" required>
+              </div>
+
+              <!-- Resistencia -->
+              <div class="form-group">
+                <label for="resistencia"> Resistencia </label>
+                <input type="number" id="resistencia" name="resistencia" min="1" max="10" class="form-control" required>
+              </div>
+
+              <!-- Evaluación -->
+              <div class="form-group">
+                <label for="evaluacion_sesion"> Evaluación de la Sesión </label>
+                <select id="evaluacion_sesion" name="evaluacion_sesion" class="form-control" required>
+                  <option value="" disabled selected> Seleccione una opción... </option>
+                  <option value="Excelente"> Excelente </option>
+                  <option value="Bueno"> Bueno </option>
+                  <option value="Regular"> Regular </option>
+                  <option value="Malo"> Malo </option>
+                </select>
+              </div>
+              <!-- Observaciones -->
+              <div class="form-group">
+                <label for="observaciones"> Observaciones clínicas </label>
+                <textarea id="observaciones" name="observaciones" class="form-control" rows="5" placeholder="Notas clínicas..." required></textarea>
+              </div>
+              <hr style="border:0;border-top:1px dashed var(--border-color);margin:20px 0;">
+              <!-- Ejercicio -->
+              <div class="form-group">
+                <label for="id_ejercicio"> Ejercicio Aplicado </label>
+                <select id="id_ejercicio" name="id_ejercicio" class="form-control" required>
+                  <option value="" disabled selected> Seleccione un ejercicio... </option>
+                  {% for ejercicio in ejercicios %}
+                  <option value="{{ ejercicio.id_ejercicio }}"> {{ ejercicio.nombre_ejercicio }} </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Dificultad -->
+              <div class="form-group">
+                <label for="nivel_dificultad"> Nivel de Dificultad </label>
+                <select id="nivel_dificultad" name="nivel_dificultad" class="form-control" required>
+                  <option value="" disabled selected> Seleccione dificultad... </option>
+                  <option value="Bajo"> Bajo </option>
+                  <option value="Medio"> Medio </option>
+                  <option value="Alto"> Alto </option>
+                </select>
+              </div>
+              <!-- Submit -->
+              <button type="submit" class="btn-submit"> <i class="fa-solid fa-floppy-disk"></i> Guardar y Finalizar Sesión </button>
+            </form>
+          </div>
         </div>
+      </div>
+      {% else %}
+      <!-- Empty -->
+      <div style="text-align:center;padding:80px;color:#94a3b8;">
+        <i class="fa-solid fa-bed-pulse" style="font-size:48px;margin-bottom:20px;"></i>
+        <h2> No hay sesiones activas </h2>
+        <p> Actualmente no existe una sesión en curso para este terapeuta. </p>
 
       </div>
 
-      <div class="right-column">
-        <div class="card" style="border-top: 4px solid var(--accent-teal);">
-          <h3 class="card-title"><i class="fa-solid fa-notes-medical"></i> Registro de Sesión</h3>
+      {% endif %}
 
-          <form action="/sesion/guardar" method="POST">
+    </main>
 
-            <input type="hidden" name="id_paciente" value="{{ paciente.id_paciente | default('PAC-1042') }}">
-
-            <div class="form-group">
-              <label for="evaluacion_sesion">Evaluación de la Sesión (Rendimiento General)</label>
-              <select name="evaluacion_sesion" id="evaluacion_sesion" class="form-control" required>
-                <option value="" disabled selected>Seleccione una opción...</option>
-                <option value="Excelente">Excelente - Cumplió todos los objetivos</option>
-                <option value="Bueno">Bueno - Avance moderado</option>
-                <option value="Regular">Regular - Presentó dolor o fatiga</option>
-                <option value="Malo">Malo - Sesión suspendida o sin avance</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="progreso_observado">Progreso Observado (Notas Clínicas)</label>
-              <textarea name="progreso_observado" id="progreso_observado" class="form-control"
-                placeholder="Describa el rango de movimiento, dolor referido por el paciente y tolerancia al esfuerzo..."
-                required></textarea>
-            </div>
-
-            <hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 20px 0;">
-            <h4 style="margin-top: 0; font-size: 15px; color: var(--text-dark);">Detalle de Ejercicios</h4>
-
-            <div style="display: flex; gap: 15px;">
-              <div class="form-group" style="flex: 1;">
-                <label for="id_ejercicio">ID Ejercicio</label>
-                <input type="text" name="id_ejercicio" id="id_ejercicio" class="form-control" placeholder="Ej. EJ-H01"
-                  required>
-              </div>
-
-              <div class="form-group" style="flex: 2;">
-                <label for="nombre_ejercicio">Nombre del Ejercicio</label>
-                <input type="text" name="nombre_ejercicio" id="nombre_ejercicio" class="form-control"
-                  placeholder="Ej. Rotación Externa con Banda" required>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="nivel_dificultad">Nivel de Dificultad Aplicado</label>
-              <select name="nivel_dificultad" id="nivel_dificultad" class="form-control" required>
-                <option value="" disabled selected>Seleccione la dificultad...</option>
-                <option value="Bajo">Bajo (Asistido / Sin peso)</option>
-                <option value="Medio">Medio (Resistencia ligera)</option>
-                <option value="Alto">Alto (Resistencia máxima / Independiente)</option>
-              </select>
-            </div>
-
-            <button type="submit" class="btn-submit">
-              <i class="fa-solid fa-cloud-arrow-up"></i> Guardar y Finalizar Sesión
-            </button>
-          </form>
-        </div>
-      </div>
-
-    </div>
-  </main>
-
-</body>
-
+  </body>
 </html>

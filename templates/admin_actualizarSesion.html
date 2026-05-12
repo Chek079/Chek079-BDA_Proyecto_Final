@@ -64,7 +64,7 @@
               id="fecha"
               name="fecha"
               class="form-control"
-              value="{{ sesion.fecha | string | truncate(10, killwords=True, end='') }}"
+              value="{{ sesion.fecha.strftime('%Y-%m-%d') if sesion.fecha else '' }}"
               required>
             </div>
 
@@ -134,12 +134,7 @@
           <!-- Observaciones (ancho completo) -->
           <div class="form-group full-width">
             <label for="observaciones">Comentarios Administrativos</label>
-            <textarea
-              id="observaciones"
-              name="observaciones"
-              class="form-control"
-              rows="3"
-              placeholder="Ej. El paciente debe liquidar saldo pendiente antes de iniciar la sesión...">{{ sesion.observaciones or '' }}</textarea>
+            <textarea id="observaciones" name="observaciones" class="form-control" rows="3" placeholder="Ej. El paciente debe liquidar saldo pendiente antes de iniciar la sesión...">{{ sesion.observaciones_clinicas or '' }}</textarea>
           </div>
 
           <div style="display: flex; gap: 12px; flex-wrap: wrap;">

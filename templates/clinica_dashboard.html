@@ -1,173 +1,245 @@
 <!DOCTYPE html>
 <html lang="es">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Panel - Rehab IoT</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
-  <link rel="stylesheet" href="{{url_for('static',filename='css/clinica_base.css')}}">
-  <link rel="stylesheet" href="{{url_for('static',filename='css/clinica_dashboard.css')}}">
-  <meta http-equiv="refresh" content="5">
-</head>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Panel - Rehab IoT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{url_for('static',filename='css/clinica_base.css')}}">
+    <link rel="stylesheet" href="{{url_for('static',filename='css/clinica_dashboard.css')}}">
+    <meta http-equiv="refresh" content="5">
+  </head>
 
-<body>
+  <body>
 
-  <!-- Inicio de sidebar-->
-  <nav class="sidebar">
-    <div class="sidebar-header">
-      <h1> Rehab IoT </h1>
-      <p style="font-size: 12px; color: var(--text-light); margin-top: 5px;">Portal Médico</p>
-    </div>
-    <ul class="nav-links">
-      <li><a href="{{url_for('clinica_dashboard')}}" class="active"><i class="fa-solid fa-calendar-day"></i> Mi Agenda
-          Hoy</a></li>
-      <li><a href="{{url_for('clinica_obtenerPacientes')}}"><i class="fa-solid fa-users"></i> Mis Pacientes</a></li>
-      <li><a href="{{url_for('clinica_obtenerSesiones')}}"><i class="fa-solid fa-file-medical"></i> Historial
-          Sesiones</a></li>
-      <li><a href="{{url_for('clinica_expedienteSesion')}}"><i class="fa-solid fa-file-medical"></i> Sesión Activa</a>
-      </li>
-      <li><a href="{{url_for('clinica_sesionesDomicilio')}}"><i class="fa-solid fa-house-chimney-user"></i> Terapias
-          Domicilio</a></li>
-      <li style="margin-top: auto;"><a href="{{url_for('logout')}}"><i
-            class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
-    </ul>
-  </nav>
-  <!-- Fin de sidebar-->
-
-  <main class="main-content">
-
-    <div class="header">
-      <div>
-        <h2>Hola, Dr. {{ terapeuta_nombre | default('Martínez') }}</h2>
-        <p>Aquí está tu flujo de pacientes para hoy.</p>
+    <!-- Inicio de sidebar-->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h1> Rehab IoT </h1>
+        <p style="font-size: 12px; color: var(--text-light); margin-top: 5px;">Portal Médico</p>
       </div>
-      <div class="date-badge">
-        <i class="fa-regular fa-calendar"></i> <span id="currentDate">22 de Marzo, 2026</span>
-      </div>
-    </div>
+      <ul class="nav-links">
+        <li><a href="{{url_for('clinica_dashboard')}}" class="active"><i class="fa-solid fa-calendar-day"></i> Mi Agenda
+            Hoy</a></li>
+        <li><a href="{{url_for('clinica_obtenerPacientes')}}"><i class="fa-solid fa-users"></i> Mis Pacientes</a></li>
+        <li><a href="{{url_for('clinica_obtenerSesiones')}}"><i class="fa-solid fa-file-medical"></i> Historial
+            Sesiones</a></li>
+        <li><a href="{{url_for('clinica_expedienteSesion')}}"><i class="fa-solid fa-file-medical"></i> Sesión Activa</a>
+        </li>
+        <li><a href="{{url_for('clinica_sesionesDomicilio')}}"><i class="fa-solid fa-house-chimney-user"></i> Terapias
+            Domicilio</a></li>
+        <li style="margin-top: auto;"><a href="{{url_for('logout')}}"><i
+              class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión</a></li>
+      </ul>
+    </nav>
+    <!-- Fin de sidebar-->
 
-    <div class="summary-grid">
-      <div class="summary-card">
-        <h3>{{ total_citas | default('0') }}</h3>
-        <p>Citas Programadas</p>
-      </div>
-      <div class="summary-card pending">
-        <h3 style="color: var(--status-yellow);">{{ pacientes_espera | default('0') }}</h3>
-        <p>En Sala de Espera</p>
-      </div>
-      <div class="summary-card done">
-        <h3 style="color: var(--status-green);">{{ atendidos_hoy | default('0') }}</h3>
-        <p>Pacientes Atendidos</p>
-      </div>
-    </div>
+    <main class="main-content">
 
-    <div class="agenda-container">
-      <div class="agenda-header">
-        <h3>Agenda y Localización IoT</h3>
-        <span style="font-size: 12px; color: var(--text-light);"><i class="fa-solid fa-satellite-dish"></i>
-          Actualización en tiempo real vía Beacons</span>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Horario</th>
-            <th>Paciente</th>
-            <th>Motivo / Terapia</th>
-            <th>Estado (Semáforo)</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-		{% for cita in citas_hoy %}
-  <tr>
-    <td style="font-weight: 600; color: var(--primary-blue);">{{ cita.hora_inicio }}</td>
-    <td>
-      <strong>{{ cita.paciente_nombre }}</strong>
-      <div style="font-size: 12px; color: var(--text-light);">ID: {{ cita.id_paciente }}</div>
-    </td>
-    <td>{{ cita.tratamiento or 'Terapia general' }}</td>
-
-    <td>
-      {% if cita.estado_sesion == 'EN_CURSO' %}
-        <div class="semaforo text-green">
-          <span class="dot green"></span> En sesión
+      <div class="header">
+        <div>
+          <h2>Hola, Dr. {{ terapeuta_nombre | default('Martínez') }}</h2>
+          <p>Aquí está tu flujo de pacientes para hoy.</p>
         </div>
-      {% elif cita.estado_sesion == 'FINALIZADA' %}
-        <div class="semaforo text-grey">
-          <span class="dot grey"></span> Sesión finalizada
+        <div class="date-badge">
+          <i class="fa-regular fa-calendar"></i> <span id="currentDate">22 de Marzo, 2026</span>
         </div>
-      {% elif cita.estado_ubicacion == 'Sala_Espera' %}
-        <div class="semaforo text-yellow">
-          <span class="dot yellow"></span> En sala de espera
+      </div>
+
+      <div class="summary-grid">
+
+        <div class="summary-card">
+          <h3>{{ total_citas }}</h3>
+          <p>Citas Programadas</p>
         </div>
-      {% elif cita.estado_ubicacion == 'Consultorio' %}
-        <div class="semaforo text-green">
-          <span class="dot green"></span> Listo en consultorio
+
+        <div class="summary-card pending">
+          <h3 style="color: var(--status-yellow);"> {{ pacientes_espera }} </h3>
+          <p>En Sala de Espera</p>
         </div>
-      {% else %}
-        <div class="semaforo text-grey">
-          <span class="dot grey"></span> No ha llegado
+
+        <div class="summary-card done">
+          <h3 style="color: var(--status-green);"> {{ atendidos_hoy }} </h3>
+          <p>Pacientes Atendidos</p>
         </div>
-      {% endif %}
-    </td>
 
-    <td>
-      {% if cita.estado_sesion == 'EN_CURSO' %}
-        <form action="{{ url_for('clinica_finalizarSesionReal', id_sesion=cita.id_sesion) }}"
-              method="POST" style="margin:0;">
-          <button type="submit" class="btn-action"
-                  style="background: #ef4444; color: white;">
-            Finalizar sesión
-          </button>
-        </form>
+        <div class="summary-card">
+          <h3> {{ citas_hoy | length }} </h3>
+          <p>Total Agenda Hoy</p>
+        </div>
 
-      {% elif cita.estado_sesion == 'FINALIZADA' %}
-        <a href="{{ url_for('clinica_expedientePaciente') }}?id_paciente={{ cita.id_paciente }}"
-           class="btn-action btn-start">Ver expediente</a>
+        <!-- KPI NUEVO -->
+        <div class="summary-card">
+          <h3 style="color:#3b82f6;">
+            {{
+            citas_hoy
+            | selectattr('estado_sesion', 'equalto', 'EN_CURSO')
+            | list
+            | length
+            }}
+          </h3>
+          <p>Sesiones en Curso</p>
+        </div>
 
-      {% elif cita.estado_ubicacion in ['Sala_Espera', 'Consultorio'] %}
-        <form action="{{ url_for('clinica_iniciarSesionReal', id_sesion=cita.id_sesion) }}"
-              method="POST" style="margin:0;">
-          <button type="submit" class="btn-action btn-start">
-            Iniciar sesión
-          </button>
-        </form>
+        <!-- KPI NUEVO -->
+        <div class="summary-card">
+          <h3 style="color:#ef4444;">
+            {{
+            citas_hoy
+            | selectattr('estado_sesion', 'equalto', 'FINALIZADA')
+            | list
+            | length
+            }}
+          </h3>
+          <p>Sesiones Finalizadas</p>
+        </div>
 
-      {% else %}
-        <button class="btn-action btn-disabled" disabled>Esperando...</button>
-      {% endif %}
-    </td>
-  </tr>
-  {% else %}
-  <tr>
-    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-light);">
-      No tienes citas programadas para hoy.
-    </td>
-  </tr>
-  {% endfor %}
-		
+      </div>
+      <div class="agenda-container" style="margin-top:20px;">
+        <div class="agenda-header">
+          <h3>Pacientes Atendidos</h3>
+        </div>
 
-        </tbody>
-      </table>
-    </div>
-  </main>
-  <script>
-    // Reloj en vivo que se actualiza cada segundo
-    function actualizarHora() {
+        <div id="graficaPacientesActuales" style="width:100%; height:400px;"></div>
+      </div>
+
+      <div class="agenda-container">
+        <div class="agenda-header">
+          <h3>Agenda y Localización IoT</h3>
+          <span style="font-size: 12px; color: var(--text-light);"><i class="fa-solid fa-satellite-dish"></i>
+            Actualización en tiempo real vía Beacons</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Horario</th>
+              <th>Paciente</th>
+              <th>Motivo / Terapia</th>
+              <th>Estado (Semáforo)</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cita in citas_hoy %}
+            <tr>
+              <td style="font-weight: 600; color: var(--primary-blue);">{{ cita.hora_inicio }}</td>
+              <td>
+                <strong>{{ cita.paciente_nombre }}</strong>
+                <div style="font-size: 12px; color: var(--text-light);">ID: {{ cita.id_paciente }}</div>
+              </td>
+              <td>{{ cita.tratamiento or 'Terapia general' }}</td>
+
+              <td>
+                {% if cita.estado_sesion == 'EN_CURSO' %}
+                <div class="semaforo text-green">
+                  <span class="dot green"></span> En sesión
+                </div>
+                {% elif cita.estado_sesion == 'FINALIZADA' %}
+                <div class="semaforo text-grey">
+                  <span class="dot grey"></span> Sesión finalizada
+                </div>
+                {% elif cita.estado_ubicacion == 'Sala_Espera' %}
+                <div class="semaforo text-yellow">
+                  <span class="dot yellow"></span> En sala de espera
+                </div>
+                {% elif cita.estado_ubicacion == 'Consultorio' %}
+                <div class="semaforo text-green">
+                  <span class="dot green"></span> Listo en consultorio
+                </div>
+                {% else %}
+                <div class="semaforo text-grey">
+                  <span class="dot grey"></span> No ha llegado
+                </div>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if cita.estado_sesion == 'EN_CURSO' %}
+                <form action="{{ url_for('clinica_finalizarSesionReal', id_sesion=cita.id_sesion) }}"
+                  method="POST" style="margin:0;">
+                  <button type="submit" class="btn-action"
+                    style="background: #ef4444; color: white;">
+                    Finalizar sesión
+                  </button>
+                </form>
+
+                {% elif cita.estado_sesion == 'FINALIZADA' %}
+                <a href="{{ url_for('clinica_expedientePaciente') }}?id_paciente={{ cita.id_paciente }}"
+                  class="btn-action btn-start">Ver expediente</a>
+
+                {% elif cita.estado_ubicacion in ['Sala_Espera', 'Consultorio'] %}
+                <form action="{{ url_for('clinica_iniciarSesionReal', id_sesion=cita.id_sesion) }}"
+                  method="POST" style="margin:0;">
+                  <button type="submit" class="btn-action btn-start">
+                    Iniciar sesión
+                  </button>
+                </form>
+
+                {% else %}
+                <button class="btn-action btn-disabled" disabled>Esperando...</button>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-light);">
+                No tienes citas programadas para hoy.
+              </td>
+            </tr>
+            {% endfor %}
+
+
+          </tbody>
+        </table>
+      </div>
+    </main>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script>
+      // Reloj en vivo que se actualiza cada segundo
+      function actualizarHora() {
         const now = new Date();
         const options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
         const fecha = now.toLocaleDateString('es-ES', options).replace(/^\w/, c => c.toUpperCase());
         const hora  = now.toLocaleTimeString('es-MX', {hour12: true});
         document.getElementById('currentDate').innerText = fecha + ' — ' + hora;
-    }
-    actualizarHora();
-    setInterval(actualizarHora, 1000);
+      }
+      actualizarHora();
+      setInterval(actualizarHora, 1000);
 
-    // Indicador visual de auto-refresh
-    console.log('Auto-refresh cada 30 segundos activo');
-</script>
+      // Indicador visual de auto-refresh
+      console.log('Auto-refresh cada 30 segundos activo');
+    </script>
+    <script>
+      Highcharts.chart('graficaPacientesActuales', {
+        chart: { type: 'column' },
+        title: { text: 'Sesiones por Paciente' },
 
-</body>
+        xAxis: {
+          categories: [
+            {% for row in pacientes_chart %}
+            '{{ row.paciente }}',
+            {% endfor %}
+          ]
+        },
+        yAxis: {
+          min: 0,
+          title: {
+            text: 'Total de sesiones'
+          }
+        },
+
+        series: [{
+          name: 'Sesiones',
+          data: [
+            {% for row in pacientes_chart %}
+            {{ row.total_sesiones }},
+            {% endfor %}
+          ]
+        }]
+      });
+    </script>
+
+  </body>
 
 </html>
