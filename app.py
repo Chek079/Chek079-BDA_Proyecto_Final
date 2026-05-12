@@ -7,15 +7,9 @@ from pymongo import MongoClient
 app = Flask(__name__)
 app.secret_key = '1234'
 
-
-
-
 # Conexión MongoDB
 mongo_client = MongoClient('mongodb://localhost:27017/')
 mongo_db     = mongo_client['rehab_iot']
-
-
-
 
 # Variable global para guardar última ubicación GPS
 ultima_ubicacion = {'lat': None, 'lon': None, 'device': None}
@@ -428,15 +422,6 @@ def admin_obtenerBeacons():
         beacons = []
     return render_template('admin_beacons.html', beacons=beacons or [])
 
-@app.route('/admin/reportes')
-@login_required
-@role_required('admin')
-def admin_reportes():
-    try:
-        kpi = {}
-    except Exception:
-        kpi = {}
-    return render_template('admin_reportes.html', kpi=kpi)
 
 @app.route('/paciente/editar/<int:id_paciente>', methods=['GET', 'POST'])
 @login_required
